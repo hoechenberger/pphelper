@@ -1,0 +1,2 @@
+o Finish Documentation
+o Use Sphinx and numpydoc to build docs
