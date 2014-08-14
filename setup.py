@@ -8,10 +8,12 @@ try:
 except ImportError:
     raise sys.exit('Could not import setuptools.')
 
+# Ger version info.
+exec(open('pphelper/version.py').read())
 
 setup(
     name='pphelper',
-    version='0.1',
+    version=__version__,
     author='Richard Höchenberger',
     author_email='richard.hoechenberger@gmail.com',
     packages=['pphelper', 'pphelper.tests'],
