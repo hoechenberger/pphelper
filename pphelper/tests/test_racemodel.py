@@ -28,15 +28,11 @@ def test_gen_step_fun_unordered():
     """
     Un-Ordered RTs, no ties
     """
-    C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
-         'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
-         'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
-
     inputRT = np.array([274, 249, 291, 257, 260, 268, 271, 264, 277, 244])
     n = inputRT.shape[0]
 
     expectedP = np.arange(1, n+1) / n
-    expectedRT = C['x']
+    expectedRT = np.sort(inputRT)
 
     P, RT = gen_step_fun(inputRT)
     assert np.array_equal(P, expectedP)
@@ -52,10 +48,10 @@ def test_gen_step_fun_with_ties():
          'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
 
     inputRT = C['z']
-    n = inputRT.shape[0]
+    n = np.unique(inputRT).shape[0]
 
     expectedP = np.arange(1, n+1) / n
-    expectedRT = np.unique(C['z'])
+    expectedRT = np.unique(inputRT)
 
     P, RT = gen_step_fun(inputRT)
     assert np.array_equal(P, expectedP)
