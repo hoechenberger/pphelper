@@ -618,5 +618,3 @@ def test_compare_cdfs_from_raw_rts():
     assert results.equals(resultsExpected)
     # Compare indices.
     assert results.index.equals(resultsExpected.index)
-
-test_gen_cdf_tmax_is_none()
