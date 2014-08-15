@@ -8,16 +8,18 @@ try:
 except ImportError:
     raise sys.exit('Could not import setuptools.')
 
+# Ger version info.
+exec(open('pphelper/version.py').read())
 
 setup(
     name='pphelper',
-    version='0.1',
+    version=__version__,
     author='Richard Höchenberger',
     author_email='richard.hoechenberger@gmail.com',
     packages=['pphelper', 'pphelper.tests'],
     license='LICENSE.txt',
     description='Different helper modules for analysis of psychophysics experiments.',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     install_requires=[
         'pandas >= 0.14.1',
         'numpy',
