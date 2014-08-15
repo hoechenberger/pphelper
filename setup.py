@@ -17,7 +17,7 @@ setup(
     author='Richard Höchenberger',
     author_email='richard.hoechenberger@gmail.com',
     packages=['pphelper', 'pphelper.tests'],
-    license='LICENSE.txt',
+    license='LICENSE.rst',
     description='Different helper modules for analysis of psychophysics experiments.',
     long_description=open('README.rst').read(),
     install_requires=[

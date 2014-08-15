@@ -2,7 +2,7 @@
 pphelper
 ========
 
-``pphelper`` is a collection of tools I am using for the analysis of psychophysical data.
+``pphelper`` is a collection of tools I use for the analysis of psychophysical data.
 
 *******
 Modules
