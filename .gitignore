@@ -7,3 +7,6 @@
 build
 dist
 MANIFEST
+doc/source/pphelper.tests.rst
+doc/source/modules.rst
+doc/source/pphelper.rst
