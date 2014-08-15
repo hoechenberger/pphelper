@@ -24,43 +24,43 @@ def gen_cdf(responseTimes, tMax=None):
 
     Examples
     --------
-    >> from analysis.racemodel import gen_cdf
-    >> import numpy as np
-    >> RTs = np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])
+    >>> from pphelper.racemodel import gen_cdf
+    >>> import numpy as np
+    >>> RTs = np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])
     >>> gen_cdf(RTs, tMax=RTs.max())
-        t
-        0     0
-        1     0
-        2     0
-        3     0
-        4     0
-        5     0
-        6     0
-        7     0
-        8     0
-        9     0
-        10    0
-        11    0
-        12    0
-        13    0
-        14    0
-        ...
-        266    0.856643
-        267    0.863636
-        268    0.870629
-        269    0.877622
-        270    0.884615
-        271    0.892308
-        272    0.900000
-        273    0.907692
-        274    0.915385
-        275    0.923077
-        276    0.930769
-        277    0.938462
-        278    0.946154
-        279    0.953846
-        280    1.000000
-        Length: 281, dtype: float64
+    t
+    0     0
+    1     0
+    2     0
+    3     0
+    4     0
+    5     0
+    6     0
+    7     0
+    8     0
+    9     0
+    10    0
+    11    0
+    12    0
+    13    0
+    14    0
+    ...
+    266    0.856643
+    267    0.863636
+    268    0.870629
+    269    0.877622
+    270    0.884615
+    271    0.892308
+    272    0.900000
+    273    0.907692
+    274    0.915385
+    275    0.923077
+    276    0.930769
+    277    0.938462
+    278    0.946154
+    279    0.953846
+    280    1.000000
+    Length: 281, dtype: float64
 
     """
 
@@ -109,7 +109,7 @@ def gen_percentiles(n=10):
 
     Parameters
     ----------
-    n : int
+    n : int, optional
         The number of percentiles to generate. Defaults to 10.
 
     Returns
@@ -117,7 +117,14 @@ def gen_percentiles(n=10):
     p : ndarray
         1-dimensional array of the calculated percentiles.
 
+    Examples
+    --------
+    >>> from pphelper.racemodel import gen_percentiles
+    >>> gen_percentiles()
+    array([ 0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95])
+
     """
+
     p = np.zeros(n)
     for i in range(1, n+1):
         p[i-1] = (i-0.5) / n
@@ -143,7 +150,24 @@ def get_percentiles_from_cdf(G, p):
     Series
         Returns a Series of interpolated percentile boundaries (fictive response times).
 
+    Examples
+    --------
+    >>> from pphelper.racemodel import gen_cdf, gen_percentiles, get_percentiles_from_cdf
+    >>> import numpy as np
+    >>> RTs = np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])
+    >>> CDF = gen_cdf(RTs)
+    >>> percentiles = gen_percentiles(5)
+    >>> get_percentiles_from_cdf(CDF, percentiles)
+    p
+    0.1    237.20
+    0.3    241.35
+    0.5    245.00
+    0.7    255.20
+    0.9    272.00
+    dtype: float64
+
     """
+
     p = np.array(p).flatten()
     nPercentiles = p.shape[0]
     CDF = G
@@ -179,11 +203,20 @@ def gen_step_fun(C):
     C_sorted : ndarray
         1-dimensional array storing the corresponding response times.
 
+    Examples
+    --------
+    >>> from pphelper.racemodel import gen_step_fun
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> RTs = np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])
+    >>> p, t = gen_step_fun(RTs)
+    >>> plt.step(t, p, where='post'); plt.show()
+
     """
 
-    # Drop duplicate values
+    # Drop duplicate values and sort in ascending order
     C_sorted = np.unique(C)
-    p = np.arange(1, len(C)+1) / len(C)
+    p = np.arange(1, len(C_sorted)+1) / len(C_sorted)
 
     return p, C_sorted
 
@@ -205,13 +238,34 @@ def compare_cdfs_from_raw_rts(RtA, RtB, RtAB, num_percentiles=10):
         The number of percentiles to generate from the RT CDFs.
 
     Returns
-    ------
+    -------
     results : DataFrame
         Returns a DataFrame containing the RTs of every CDF at the generated percentiles.
         The DataFrame contains four columns: 'A', 'B', 'AB' (which correspond to the input
         RtA, RtB, and RtAB, respectively), and 'A+B', which is the hypothetical sum of
         the CDFs generated from RtA and RtB. If 'AB' < 'A+B' at any percentile, the race
         model is violated.
+
+    Examples
+    --------
+    >>> from pphelper import racemodel
+    >>> import numpy as np
+    >>> C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
+    ... 'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
+    ... 'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
+    >>> racemodel.compare_cdfs_from_raw_rts(C['x'], C['y'], C['z'])
+                A      B          AB         A+B
+    p
+    0.05  244.000  245.3  234.600000  244.000000
+    0.15  249.000  247.8  238.600000  245.590909
+    0.25  257.000  250.5  240.375000  247.292683
+    0.35  260.000  252.1  242.325000  249.285714
+    0.45  264.000  253.7  244.133333  250.916667
+    0.55  268.000  256.2  248.900000  252.250000
+    0.65  271.000  262.6  253.850000  253.583333
+    0.75  274.000  272.0  256.750000  254.916667
+    0.85  277.000  282.2  265.050000  257.765957
+    0.95  290.125  308.5  278.500000  259.808511
 
     """
 
