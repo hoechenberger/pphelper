@@ -13,10 +13,11 @@ print(results)
 
 # Write output to an Excel file?
 saveExcel = True
+path = 'D:/Temp/Racemodel Results.xlsx'
 
 if saveExcel:
     try:
-        results.to_excel('D:/Temp/Racemodel Results.xlsx')
-        print('\nExcel file successfully saved.')
-    except:
-        print('\nCould not save Excel file!')
+        results.to_excel(path)
+        print('\nExcel file successfully saved to %s.' % path)
+    except IOError:
+        print('\nCould not save Excel file %s!' % path)
