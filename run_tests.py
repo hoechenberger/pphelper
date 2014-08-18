@@ -1,6 +1,11 @@
 #!/usr/bin/env python
+
 import sys
-import pytest
+
+try:
+    import pytest
+except ImportError:
+    raise sys.exit('Could not import pytest.')
 
 
 if __name__ == '__main__':
