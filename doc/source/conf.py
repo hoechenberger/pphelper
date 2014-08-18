@@ -204,8 +204,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'pphelper.tex', u'pphelper Documentation',
-   u'Richard Höchenberger', 'manual'),
+    ('index', 'pphelper.tex', u'pphelper Documentation',
+     u'Richard Höchenberger', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -248,9 +248,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'pphelper', u'pphelper Documentation',
-   u'Richard Höchenberger', 'pphelper', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'pphelper', u'pphelper Documentation',
+     u'Richard Höchenberger', 'pphelper', 'Different helper modules for analysis of psychophysics experiments.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
