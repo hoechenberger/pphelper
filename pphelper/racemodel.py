@@ -1,7 +1,32 @@
-from __future__ import division
-import numpy as np
-import pandas as pd
+# -*- coding: utf-8 -*-
 
+"""
+   pphelper.racemodel
+   ==================
+
+   Race model inequality analysis implementation, based on Ulrich, Miller,
+   and Schröter (2007): 'Testing the race model inequality: An algorithm
+   and computer programs', published in Behavior Research Methods 39 (2),
+   pp. 291-302.
+
+   Provides
+   --------
+     - gen_cdf()
+       Estimate the cumulative frequency polygon from response time data.
+     - gen_percentiles()
+       Calculate n equally spaced percentiles.
+     - get_percentiles_from_cdf()
+       Interpolate the percentile boundaries.
+     - gen_step_fun()
+       Generate a step function of an observed response time distribution.
+     - compare_cdfs_from_raw_rts()
+       Create cumulative distribution functions for response time data and
+       calculate the race model assumptions.
+
+"""
+
+import pandas as pd
+import numpy as np
 
 def gen_cdf(responseTimes, tMax=None):
     """
