@@ -1,9 +1,18 @@
+# -*- coding: utf-8 -*-
+
+"""
+Unit and (sort-of) integration tests for ``pphelper``.
+"""
+
 from __future__ import division
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
                                compare_cdfs_from_raw_rts
+
 
 def test_gen_step_fun_ordered():
     """
@@ -18,15 +27,16 @@ def test_gen_step_fun_ordered():
 
     expectedP = np.arange(1, n+1) / n
     expectedRT = inputRT.copy()
+    expected = pd.Series(expectedRT, pd.Index(expectedP, name='p'))
 
-    P, RT = gen_step_fun(inputRT)
-    assert np.array_equal(P, expectedP)
-    assert np.array_equal(RT, expectedRT)
+    result = gen_step_fun(inputRT)
+    assert result.equals(expected)
+    assert result.index.equals(expected.index)
 
 
 def test_gen_step_fun_unordered():
     """
-    Un-Ordered RTs, no ties
+    Un-Ordered RTs, no ties.
     """
     inputRT = np.array([274, 249, 291, 257, 260, 268, 271, 264, 277, 244])
     n = inputRT.shape[0]
@@ -34,9 +44,11 @@ def test_gen_step_fun_unordered():
     expectedP = np.arange(1, n+1) / n
     expectedRT = np.sort(inputRT)
 
-    P, RT = gen_step_fun(inputRT)
-    assert np.array_equal(P, expectedP)
-    assert np.array_equal(RT, expectedRT)
+    expected = pd.Series(expectedRT, pd.Index(expectedP, name='p'))
+
+    result = gen_step_fun(inputRT)
+    assert result.equals(expected)
+    assert result.index.equals(expected.index)
 
 
 def test_gen_step_fun_with_ties():
@@ -53,14 +65,16 @@ def test_gen_step_fun_with_ties():
     expectedP = np.arange(1, n+1) / n
     expectedRT = np.unique(inputRT)
 
-    P, RT = gen_step_fun(inputRT)
-    assert np.array_equal(P, expectedP)
-    assert np.array_equal(RT, expectedRT)
+    expected = pd.Series(expectedRT, pd.Index(expectedP, name='p'))
+
+    result = gen_step_fun(inputRT)
+    assert result.equals(expected)
+    assert result.index.equals(expected.index)
 
 
 def test_gen_cdf():
     """
-    Test the gen_cdf() function
+    Test the gen_cdf() function.
     """
     C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
          'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
@@ -333,7 +347,7 @@ def test_gen_cdf():
     G = dict()
     for key in C.keys():
         RT = C[key]
-        G[key] = gen_cdf(RT, tMax=RTmax)
+        G[key] = gen_cdf(RT, t_max=RTmax)
 
         del RT
 
@@ -352,6 +366,9 @@ def test_gen_cdf():
 
 
 def test_gen_cdf_tmax_is_none():
+    """
+    No t_max supplied to gen_cdf().
+    """
     C = np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291])
 
     index_expected = pd.Index(np.arange(C.max() + 1), name='t')
@@ -424,6 +441,9 @@ def test_gen_cdf_tmax_is_none():
 
 
 def test_gen_percentiles():
+    """
+    Test gen_percentiles().
+    """
     assert np.array_equal(gen_percentiles(10),
                           np.array([ 0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95]))
 
@@ -434,6 +454,9 @@ def test_gen_percentiles():
 
 
 def test_get_percentiles_from_cdf():
+    """
+    Test get_percentiles_from_cdf().
+    """
     p = gen_percentiles(10)
     RTmax = 319
     index = pd.Index(np.arange(RTmax + 1), name='t')
@@ -587,6 +610,9 @@ def test_get_percentiles_from_cdf():
 
 
 def test_compare_cdfs_from_raw_rts():
+    """
+    Test compare_cdfs_from_raw_rts().
+    """
     C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
          'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
          'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
@@ -614,3 +640,110 @@ def test_compare_cdfs_from_raw_rts():
     assert results.equals(resultsExpected)
     # Compare indices.
     assert results.index.equals(resultsExpected.index)
+
+
+def compare_cdfs_from_raw_rts_with_percentiles_argument():
+    """
+    ``percentiles`` argument is passed.
+    """
+    C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
+         'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
+         'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
+
+    p = np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95])
+
+    resultsExpected = pd.DataFrame({'A': np.array([ 244.,     249.,     257.,     260.,     264.,
+                                                    268.,     271.,     274.,     277.,  290.125]),
+                                    'B': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
+                                                   256.2,  262.6,  272.,   282.2,  308.5]),
+                                    'AB': np.array([ 234.6,         238.6,         240.375,       242.325,      244.13333333,
+                                                     248.9,         253.85,        256.75,        265.05,        278.5       ]),
+                                    'A+B': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
+                                                     252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
+                                   index=pd.Index(p, name='p'))
+
+    resultsExpected = resultsExpected[['A', 'B', 'AB', 'A+B']]
+
+    results = compare_cdfs_from_raw_rts(C['x'], C['y'], C['z'],
+                                        percentiles=p)
+
+    results = results.apply(np.around, axis=0)
+    resultsExpected = resultsExpected.apply(np.around, axis=0)
+
+    # Compare values.
+    assert results.equals(resultsExpected)
+    # Compare indices.
+    assert results.index.equals(resultsExpected.index)
+
+
+def compare_cdfs_from_raw_rts_with_names_argument():
+    """
+    ``names`` argument is passed.
+    """
+    C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
+         'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
+         'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
+
+    p = np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95])
+
+    resultsExpected = pd.DataFrame({'A': np.array([ 244.,     249.,     257.,     260.,     264.,
+                                                    268.,     271.,     274.,     277.,  290.125]),
+                                    'V': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
+                                                   256.2,  262.6,  272.,   282.2,  308.5]),
+                                    'AV': np.array([ 234.6,         238.6,         240.375,       242.325,      244.13333333,
+                                                     248.9,         253.85,        256.75,        265.05,        278.5       ]),
+                                    'A+V': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
+                                                     252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
+                                   index=pd.Index(p, name='p'))
+
+    resultsExpected = resultsExpected[['A', 'V', 'AV', 'A+V']]
+
+    results = compare_cdfs_from_raw_rts(C['x'], C['y'], C['z'],
+                                        names=['A', 'V', 'AV', 'A+V'])
+
+    results = results.apply(np.around, axis=0)
+    resultsExpected = resultsExpected.apply(np.around, axis=0)
+
+    # Compare values.
+    assert results.equals(resultsExpected)
+    # Compare indices.
+    assert results.index.equals(resultsExpected.index)
+
+
+def compare_cdfs_from_raw_rts_with_percentiles_and_names_argument():
+    """
+    ``percentiles`` and ``names`` arguments are passed.
+    """
+    C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
+         'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
+         'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
+
+    p = np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95])
+
+    resultsExpected = pd.DataFrame({'A': np.array([ 244.,     249.,     257.,     260.,     264.,
+                                                    268.,     271.,     274.,     277.,  290.125]),
+                                    'V': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
+                                                   256.2,  262.6,  272.,   282.2,  308.5]),
+                                    'AV': np.array([ 234.6,         238.6,         240.375,       242.325,      244.13333333,
+                                                     248.9,         253.85,        256.75,        265.05,        278.5       ]),
+                                    'A+V': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
+                                                     252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
+                                   index=pd.Index(p, name='p'))
+
+    resultsExpected = resultsExpected[['A', 'V', 'AV', 'A+V']]
+
+    results = compare_cdfs_from_raw_rts(C['x'], C['y'], C['z'],
+                                        percentiles=p,
+                                        names=['A', 'V', 'AV', 'A+V'])
+
+    results = results.apply(np.around, axis=0)
+    resultsExpected = resultsExpected.apply(np.around, axis=0)
+
+    # Compare values.
+    assert results.equals(resultsExpected)
+    # Compare indices.
+    assert results.index.equals(resultsExpected.index)
+
+
+def test_plot_cdf():
+    pass
