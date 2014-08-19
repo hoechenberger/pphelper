@@ -6,7 +6,7 @@
 *.egg-info
 build
 dist
+.idea
 MANIFEST
-doc/source/pphelper.tests.rst
 doc/source/modules.rst
 doc/source/pphelper.rst
