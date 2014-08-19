@@ -29,6 +29,7 @@ from __future__ import division
 import pandas as pd
 import numpy as np
 
+
 def gen_cdf(rts, t_max=None):
     """
     Estimate the cumulative frequency polygon from response time data.
@@ -264,8 +265,8 @@ def gen_step_fun(rts):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> RTs = np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])
-    >>> p, t = gen_step_fun(RTs)
-    >>> plt.step(t, p, where='post'); plt.show()
+    >>> sf = gen_step_fun(RTs)
+    >>> plt.step(sf, sf.index, where='post'); plt.show()
 
     """
 
