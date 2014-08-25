@@ -753,7 +753,7 @@ def compare_cdfs_from_raw_rts_with_percentiles_and_names_argument():
     assert results.index.equals(resultsExpected.index)
 
 
-def test_plot_cdfs():
+def test_plot_cdfs_save():
     # Larger fonts in plots
     matplotlib.rcParams.update({'font.size': 22})
 
@@ -780,18 +780,20 @@ def test_plot_cdfs():
               'AV': '#fdc086',
               'A+V': '#686665'}
 
-    plt.close()
+    plt.figure(figsize=[12,8])
     plt.hold(True)
     for modality in data.columns:
         plt.plot(data[modality], data.index, '--o', label=modality,
                  color=colors[modality], linewidth=3, markersize=10,
                  alpha=0.7)
 
+    plt.yticks(data.index)
     plt.grid(True)
-    plt.title('Response Time Data Distributions', weight='bold')
+    plt.title('Response Time Distributions', weight='bold')
     plt.xlabel('RT', weight='bold')
     plt.ylabel('Proportion of Responses', weight='bold')
     plt.legend(loc='lower right')
+    plt.tight_layout()
     plt.savefig(outfile_expected)
 
     plot_cdfs(data, colors=colors, save=True, outfile=outfile)
