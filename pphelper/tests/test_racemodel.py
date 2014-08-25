@@ -7,11 +7,17 @@ Unit and (sort-of) integration tests for ``pphelper``.
 from __future__ import division
 import numpy as np
 import pandas as pd
+import os
+import tempfile
+
 import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib.testing.compare import compare_images
 
 from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
-                               compare_cdfs_from_raw_rts
+                               compare_cdfs_from_raw_rts, \
+                               plot_cdfs
 
 
 def test_gen_step_fun_ordered():
@@ -720,12 +726,12 @@ def compare_cdfs_from_raw_rts_with_percentiles_and_names_argument():
 
     p = np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95])
 
-    resultsExpected = pd.DataFrame({'A': np.array([ 244.,     249.,     257.,     260.,     264.,
-                                                    268.,     271.,     274.,     277.,  290.125]),
+    resultsExpected = pd.DataFrame({'A': np.array([244.,     249.,     257.,     260.,     264.,
+                                                   268.,     271.,     274.,     277.,  290.125]),
                                     'V': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
                                                    256.2,  262.6,  272.,   282.2,  308.5]),
-                                    'AV': np.array([ 234.6,         238.6,         240.375,       242.325,      244.13333333,
-                                                     248.9,         253.85,        256.75,        265.05,        278.5       ]),
+                                    'AV': np.array([234.6,         238.6,         240.375,       242.325,      244.13333333,
+                                                    248.9,         253.85,        256.75,        265.05,        278.5       ]),
                                     'A+V': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
                                                      252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
                                    index=pd.Index(p, name='p'))
@@ -745,5 +751,57 @@ def compare_cdfs_from_raw_rts_with_percentiles_and_names_argument():
     assert results.index.equals(resultsExpected.index)
 
 
-def test_plot_cdf():
-    pass
+def test_plot_cdfs():
+    # Larger fonts in plots
+    matplotlib.rcParams.update({'font.size': 22})
+
+    # Store the name of the currently selected backend.
+    default_backend = matplotlib.get_backend()
+    # Switch to the non-interactive backend.
+    matplotlib.use('Agg')
+
+    temp_dir = tempfile.gettempdir()
+    outfile_expected = os.path.join(temp_dir, 'pphelper-test_plot_cdfs.png')
+    outfile = os.path.join(temp_dir, 'pphelper-plot_cdfs.png')
+
+    p = np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95])
+
+    data = pd.DataFrame({'A': np.array([244.,     249.,     257.,     260.,     264.,
+                                        268.,     271.,     274.,     277.,  290.125]),
+                         'V': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
+                                        256.2,  262.6,  272.,   282.2,  308.5]),
+                         'AV': np.array([234.6,         238.6,         240.375,       242.325,      244.13333333,
+                                         248.9,         253.85,        256.75,        265.05,        278.5       ]),
+                         'A+V': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
+                                          252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
+                        index=pd.Index(p, name='p'))
+
+    data = data[['A', 'V', 'AV', 'A+V']]
+
+    colors = {'A': '#7fc97f',
+              'V': '#beaed4',
+              'AV': '#fdc086',
+              'A+V': '#686665'}
+
+    plt.figure()
+    plt.hold(True)
+    for modality in data.columns:
+        plt.plot(data[modality], data.index, '--o', label=modality,
+                 color=colors[modality], linewidth=3, markersize=10,
+                 alpha=0.7)
+
+    plt.grid(True)
+    plt.title('Response Time Data Distributions', weight='bold')
+    plt.xlabel('RT', weight='bold')
+    plt.ylabel('Proportion of Responses', weight='bold')
+    plt.legend(loc='lower right')
+    plt.savefig(outfile_expected)
+
+    plot_cdfs(data, colors=colors, save=True, outfile=outfile)
+
+    # `result` will be non-empty if the comparison fails.
+    result = compare_images(outfile_expected, outfile, 0.001)
+    assert not result
+
+    # Switch back to the default backend.
+    matplotlib.use(default_backend)

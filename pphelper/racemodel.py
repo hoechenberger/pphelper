@@ -11,23 +11,26 @@
 
    Provides
    --------
-     - gen_cdf()
-       Estimate the cumulative frequency polygon from response time data.
-     - gen_percentiles()
-       Calculate n equally spaced percentiles.
-     - get_percentiles_from_cdf()
-       Interpolate the percentile boundaries.
-     - gen_step_fun()
-       Generate a step function of an observed response time distribution.
-     - compare_cdfs_from_raw_rts()
-       Create cumulative distribution functions for response time data and
-       calculate the race model assumptions.
+     - ``gen_cdf`` : Estimate the cumulative frequency polygon from
+        response time data.
+     - ``gen_percentiles`` : Calculate n equally spaced percentiles.
+     - ``get_percentiles_from_cdf`` : Interpolate the percentile
+        boundaries.
+     - ``gen_step_fun`` : Generate a step function of an observed response
+        time distribution.
+     - ``compare_cdfs_from_raw_rts`` : Create cumulative distribution
+       functions for response time data and calculate the race model
+       assumptions.
 
 """
 
 from __future__ import division
 import pandas as pd
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+# Larger fonts in plots
+matplotlib.rcParams.update({'font.size': 22})
 
 
 def gen_cdf(rts, t_max=None):
@@ -403,3 +406,32 @@ def compare_cdfs_from_raw_rts(rt_a, rt_b, rt_ab, num_percentiles=10,
     results = results[names]
 
     return results
+
+
+def plot_cdfs(data, colors=None, save=False, outfile=None):
+    if colors is None:
+        color_set = ['#7fc97f', '#beaed4', '#fdc086', '#686665']
+        colors = dict()
+        for i, modality in enumerate(data.columns):
+            colors[modality] = color_set[i]
+
+    if save and not outfile:
+        raise ValueError('Please specify an output filename.')
+
+    plt.figure()
+    plt.hold(True)
+    for modality in data.columns:
+        plt.plot(data[modality], data.index, '--o', label=modality,
+                 color=colors[modality], linewidth=3, markersize=10,
+                 alpha=0.7)
+
+    plt.grid(True)
+    plt.title('Response Time Data Distributions', weight='bold')
+    plt.xlabel('RT', weight='bold')
+    plt.ylabel('Proportion of Responses', weight='bold')
+    plt.legend(loc='lower right')
+    try:
+        plt.savefig(outfile)
+    except IOError:
+        raise IOError('Could not save the figure. Please check the '
+                      'supplied path.')
