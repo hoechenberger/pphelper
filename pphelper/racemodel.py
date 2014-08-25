@@ -418,18 +418,21 @@ def plot_cdfs(data, colors=None, save=False, outfile=None):
     if save and not outfile:
         raise ValueError('Please specify an output filename.')
 
-    plt.figure()
+    plt.figure(figsize=[12,8])
     plt.hold(True)
     for modality in data.columns:
         plt.plot(data[modality], data.index, '--o', label=modality,
                  color=colors[modality], linewidth=3, markersize=10,
                  alpha=0.7)
 
+    plt.yticks(data.index)
     plt.grid(True)
-    plt.title('Response Time Data Distributions', weight='bold')
+    plt.title('Response Time Distributions', weight='bold')
     plt.xlabel('RT', weight='bold')
     plt.ylabel('Proportion of Responses', weight='bold')
     plt.legend(loc='lower right')
+    plt.tight_layout()
+
     try:
         plt.savefig(outfile)
     except IOError:
