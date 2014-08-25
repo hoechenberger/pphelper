@@ -780,7 +780,7 @@ def test_plot_cdfs():
               'AV': '#fdc086',
               'A+V': '#686665'}
 
-    plt.figure()
+    plt.close()
     plt.hold(True)
     for modality in data.columns:
         plt.plot(data[modality], data.index, '--o', label=modality,
