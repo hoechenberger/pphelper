@@ -53,6 +53,10 @@ def gen_cdf(rts, t_max=None):
     --------
     get_percentiles_from_cdf
 
+    Notes
+    -----
+    Response times will be rounded to 1 millisecond.
+
     Examples
     --------
     >>> from pphelper.racemodel import gen_cdf
@@ -95,10 +99,13 @@ def gen_cdf(rts, t_max=None):
 
     """
 
-    C = pd.Series(rts)
+    # Convert input data to a Series, and round to 1 ms
+    C = pd.Series(rts).round().astype('int')
 
     if t_max is None:
         t_max = C.max()
+    else:
+        t_max = int(round(t_max))
 
     C_sorted = C.order()
     C_unique = C_sorted.unique()
@@ -377,13 +384,13 @@ def compare_cdfs_from_raw_rts(rt_a, rt_b, rt_ab, num_percentiles=10,
                              'in compare_cdfs_from_raw_rts().')
 
     # Find the maximum response time
-    rt_max = np.concatenate([rt_a, rt_b, rt_ab]).max()
+    rt_max = np.nanmax(np.concatenate([rt_a, rt_b, rt_ab]))
     assert rt_max > 0
 
-    # Generate DataFrames from the raw RT input.
-    rt = {names[0]: pd.Series(rt_a),
-          names[1]: pd.Series(rt_b),
-          names[2]: pd.Series(rt_ab)}
+    # Generate DataFrames from the raw RT input and drop NaN values.
+    rt = {names[0]: pd.Series(rt_a).dropna(),
+          names[1]: pd.Series(rt_b).dropna(),
+          names[2]: pd.Series(rt_ab).dropna()}
 
     # Generate the cumulative distribution functions.
     cdf = dict()
@@ -471,6 +478,7 @@ def plot_cdfs(data, colors=None, save=False, outfile=None):
     if save:
         try:
             plt.savefig(outfile)
+            plt.close()
         except IOError:
             raise IOError('Could not save the figure. Please check the '
                           'supplied path.')
