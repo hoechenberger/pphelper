@@ -10,8 +10,10 @@ import pandas as pd
 import os
 import tempfile
 
-import matplotlib.pyplot as plt
 import matplotlib
+# Switch to the non-interactive backend.
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from matplotlib.testing.compare import compare_images
 
 from pphelper.racemodel import gen_step_fun, gen_cdf,\
@@ -755,11 +757,6 @@ def test_plot_cdfs():
     # Larger fonts in plots
     matplotlib.rcParams.update({'font.size': 22})
 
-    # Store the name of the currently selected backend.
-    default_backend = matplotlib.get_backend()
-    # Switch to the non-interactive backend.
-    matplotlib.use('Agg')
-
     temp_dir = tempfile.gettempdir()
     outfile_expected = os.path.join(temp_dir, 'pphelper-test_plot_cdfs.png')
     outfile = os.path.join(temp_dir, 'pphelper-plot_cdfs.png')
@@ -802,6 +799,3 @@ def test_plot_cdfs():
     # `result` will be non-empty if the comparison fails.
     result = compare_images(outfile_expected, outfile, 0.001)
     assert not result
-
-    # Switch back to the default backend.
-    matplotlib.use(default_backend)
