@@ -1,3 +1,7 @@
+.. image:: https://secure.travis-ci.org/hoechenberger/pphelper.png?branch=master
+:target: https://travis-ci.org/hoechenberger/pphelper
+
+
 ========
 pphelper
 ========
