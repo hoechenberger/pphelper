@@ -7,6 +7,8 @@ python:
   - "3.4"
 # command to install dependencies
 install:
+  - pip install numpy
+  - pip install matplotlib
   - pip install pandas
   - pip install .
 # command to run tests
