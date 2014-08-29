@@ -1,6 +1,14 @@
 =========
 Changelog
 =========
+****************
+v0.3, 2014-08-29
+****************
+- Add functionality to plot CDFs
+- Improve documentation
+- Switch naming scheme to lowercase_underscore
+- Misc. Refactoring
+- Prepare for PyPI release
 
 ****************
 v0.2, 2014-08-15
