@@ -10,3 +10,4 @@ dist
 MANIFEST
 doc/source/modules.rst
 doc/source/pphelper.rst
+doc/build
