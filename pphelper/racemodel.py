@@ -11,16 +11,11 @@
 
    Provides
    --------
-     - ``gen_cdf`` : Estimate the cumulative frequency polygon from
-        response time data.
-     - ``gen_percentiles`` : Calculate n equally spaced percentiles.
-     - ``get_percentiles_from_cdf`` : Interpolate the percentile
-        boundaries.
-     - ``gen_step_fun`` : Generate a step function of an observed response
-        time distribution.
-     - ``compare_cdfs_from_raw_rts`` : Create cumulative distribution
-       functions for response time data and calculate the race model
-       assumptions.
+     - ``compare_cdfs_from_raw_rts`` : Assess cumulative distribution functions from response time data and calculate the race model assumptions.
+     - ``gen_cdf`` : Estimate the cumulative distribution function from response time data.
+     - ``gen_percentiles`` : Calculate equally spaced percentiles values.
+     - ``gen_step_fun`` : Generate a step function from a set of observed response times.
+     - ``get_percentiles_from_cdf`` : Get the values (response times) of a cumulative distribution function at the specified percentiles.
 
 """
 
@@ -439,7 +434,7 @@ def plot_cdfs(data, colors=None, save=False, outfile=None):
 
     See also
     --------
-    ``compare_cdfs_from_raw_rts`` : Generate data in the correct input
+    compare_cdfs_from_raw_rts : Generate data in the correct input
         format for this function.
 
     """

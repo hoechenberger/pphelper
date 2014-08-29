@@ -5,10 +5,14 @@
 
 Welcome to pphelper's documentation!
 ====================================
-
-Contents:
-
+.. Contents:
 .. toctree::
    :maxdepth: 2
 
    modules
+
+.. automodule:: racemodel
+  :members:
+
+
+
