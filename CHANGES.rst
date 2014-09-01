@@ -1,6 +1,12 @@
 =========
 Changelog
 =========
+******************
+v0.3.1, 2014-XX-XX
+******************
+- Remove ``save`` argument to ``plot_cdfs()``.
+- Adapt tests to ``lowercase_underscore`` naming.
+
 ****************
 v0.3, 2014-08-29
 ****************
