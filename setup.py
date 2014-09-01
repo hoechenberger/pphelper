@@ -20,7 +20,8 @@ setup(
     url='https://github.com/hoechenberger/pphelper',
     packages=find_packages(),
     license='GPL v3',
-    description='Different helper modules for analysis of psychophysics experiments.',
+    description='Different helper modules for analysis of psychophysics '
+                'experiments.',
     long_description=open('README.rst').read(),
     install_requires=['pandas >= 0.14.1', 'matplotlib', 'numpy >= 1.7.2'],
     classifiers=['Intended Audience :: Science/Research',
@@ -36,7 +37,6 @@ setup(
                  'Programming Language :: Python :: 2.6',
                  'Programming Language :: Python :: 2.7',
                  'Programming Language :: Python :: 3',
-                 'Programming Language :: Python :: 3.2',
                  'Programming Language :: Python :: 3.3',
                  'Programming Language :: Python :: 3.4'],
 )
