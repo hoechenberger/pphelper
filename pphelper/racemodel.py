@@ -406,7 +406,7 @@ def compare_cdfs_from_raw_rts(rt_a, rt_b, rt_ab, num_percentiles=10,
     return results
 
 
-def plot_cdfs(data, colors=None, save=False, outfile=None):
+def plot_cdfs(data, colors=None, outfile=None):
     """
     Plot the response time distributions.
 
@@ -422,10 +422,9 @@ def plot_cdfs(data, colors=None, save=False, outfile=None):
         Desired colors of the elements to plot. The first element of the
         list corresponds to the first column of response times in ``data``,
         the second item to the second column, etc.
-    save : bool, optional
-        Whether to save the plot to a file.
     outfile : string, optional
-        The output filename. Only considered if ``save`` is ``True``.
+        The output filename to save the plot to. If ``None``, display the
+        plots, but do not save them.
 
     Returns
     -------
@@ -437,10 +436,15 @@ def plot_cdfs(data, colors=None, save=False, outfile=None):
     compare_cdfs_from_raw_rts : Generate data in the correct input
         format for this function.
 
+    Notes
+    -----
+    If ``outfile`` is not supplied, plots will be displayed, but not saved
+    to disk.
+
     """
 
     import matplotlib
-    if save:
+    if outfile:
         matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     # Larger fonts in plots
@@ -451,9 +455,6 @@ def plot_cdfs(data, colors=None, save=False, outfile=None):
         colors = dict()
         for i, modality in enumerate(data.columns):
             colors[modality] = color_set[i]
-
-    if save and not outfile:
-        raise ValueError('Please specify an output filename.')
 
     plt.figure(figsize=[12,8])
     plt.hold(True)
@@ -470,7 +471,7 @@ def plot_cdfs(data, colors=None, save=False, outfile=None):
     plt.legend(loc='lower right')
     plt.tight_layout()
 
-    if save:
+    if outfile:
         try:
             plt.savefig(outfile)
             plt.close()
