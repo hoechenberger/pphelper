@@ -2,6 +2,12 @@
 Changelog
 =========
 ******************
+v0.5, 2014-XX-XX
+******************
+- Add t-tests (``calculate_t_tests()``).
+- Add raw data comparison from a DataFrame (``compare_cdfs_from_dataframe``).
+
+******************
 v0.3.1, 2014-09-01
 ******************
 - Remove ``save`` argument to ``plot_cdfs()``.

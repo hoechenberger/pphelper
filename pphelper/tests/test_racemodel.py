@@ -19,7 +19,8 @@ from matplotlib.testing.compare import compare_images
 from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
                                compare_cdfs_from_raw_rts, \
-                               plot_cdfs
+                               plot_cdfs, compare_cdfs_from_dataframe, \
+                               calculate_t_tests
 
 
 def test_gen_step_fun_ordered():
@@ -642,7 +643,7 @@ def test_compare_cdfs_from_raw_rts():
     assert results.index.equals(results_expected.index)
 
 
-def compare_cdfs_from_raw_rts_with_percentiles_argument():
+def test_compare_cdfs_from_raw_rts_with_percentiles_argument():
     """
     ``percentiles`` argument is passed.
     """
@@ -678,7 +679,7 @@ def compare_cdfs_from_raw_rts_with_percentiles_argument():
     assert results.index.equals(results_expected.index)
 
 
-def compare_cdfs_from_raw_rts_with_names_argument():
+def test_compare_cdfs_from_raw_rts_with_names_argument():
     """
     ``names`` argument is passed.
     """
@@ -713,7 +714,7 @@ def compare_cdfs_from_raw_rts_with_names_argument():
     assert results.index.equals(results_expected.index)
 
 
-def compare_cdfs_from_raw_rts_with_percentiles_and_names_argument():
+def test_compare_cdfs_from_raw_rts_with_percentiles_and_names_argument():
     """
     ``percentiles`` and ``names`` arguments are passed.
     """
@@ -797,3 +798,59 @@ def test_plot_cdfs_save():
     # `result` will be non-empty if the comparison fails.
     result = compare_images(outfile_expected, outfile, 0.001)
     assert not result
+
+def test_compare_cdfs_from_dataframe():
+
+    data = pd.DataFrame({'RT': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291,
+                                         245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319,
+                                         234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280]),
+                         'Modality': ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
+                                      'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y',
+                                      'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', ]})
+
+    p = gen_percentiles(10)
+
+
+    result_expected = pd.DataFrame({'x': np.array([244.,     249.,     257.,     260.,     264.,
+                                                    268.,     271.,     274.,     277.,  290.125]),
+                                     'y': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
+                                                    256.2,  262.6,  272.,   282.2,  308.5]),
+                                     'z': np.array([234.6,         238.6,         240.375,       242.325,      244.13333333,
+                                                     248.9,         253.85,        256.75,        265.05,        278.5       ]),
+                                     'x+y': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
+                                                      252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
+                                    index=pd.Index(p, name='p'))
+
+    names = ['x', 'y', 'z', 'x+y']
+
+    result_expected = result_expected[names]
+    result = compare_cdfs_from_dataframe(data, rt_column='RT',
+                                         modality_column='Modality',
+                                         names=names,
+                                         percentiles=p)
+
+    result = result.apply(np.around, axis=0)
+    result_expected = result_expected.apply(np.around, axis=0)
+
+    assert result.equals(result_expected)
+    assert result.index.equals(result_expected.index)
+
+#
+# def test_calculate_t_tests():
+#     index = pd.Index(gen_percentiles(10))
+#
+#     data0 = pd.DataFrame({'AB': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
+#                           'A+B': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259])},
+#                          index=pd.Index(gen_percentiles(10)))
+#
+#     data1 = pd.DataFrame({'AB': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
+#                       'A+B': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259])},
+#                      index=pd.Index(gen_percentiles(10)))
+#
+#
+#     result = calculate_t_tests()
+#
+#
+#
+#
+
