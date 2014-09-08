@@ -1,14 +1,20 @@
 language: python
+
 python:
   - "2.6"
   - "2.7"
   - "3.3"
   - "3.4"
-# command to install dependencies
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install libatlas-base-dev gfortran
+
 install:
   - pip install numpy
   - pip install matplotlib
+  - pip install scipy
   - pip install pandas
   - pip install .
-# command to run tests
+
 script: py.test
