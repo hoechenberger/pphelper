@@ -20,7 +20,7 @@ from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
                                compare_cdfs_from_raw_rts, \
                                plot_cdfs, compare_cdfs_from_dataframe, \
-                               calculate_statistics()
+                               calculate_statistics
 
 
 def test_gen_step_fun_ordered():
