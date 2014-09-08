@@ -4,7 +4,7 @@ Changelog
 ******************
 v0.5, 2014-XX-XX
 ******************
-- Add t-tests (``calculate_t_tests()``).
+- Add t-tests and wilcoxon signed-rank tests (``calculate_statistics()``).
 - Add raw data comparison from a DataFrame (``compare_cdfs_from_dataframe``).
 
 ******************

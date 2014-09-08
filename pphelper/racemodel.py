@@ -22,7 +22,7 @@
 from __future__ import division
 import pandas as pd
 import numpy as np
-from scipy.stats import ttest_rel
+from scipy.stats import ttest_rel, wilcoxon
 
 
 def gen_cdf(rts, t_max=None):
@@ -504,7 +504,7 @@ def compare_cdfs_from_dataframe(data, rt_column='RT',
     return result[names]
 
 
-def calculate_t_tests(data_list, names=None):
+def calculate_statistics(data_list, names=None, analysis_type='t-test'):
     if names is None:
         names = ['AB', 'A+B']
 
@@ -521,7 +521,7 @@ def calculate_t_tests(data_list, names=None):
                 raise TypeError('Please supply a list of at least 3 '
                                 'data frames.')
 
-    t_statistics = []
+    statistics = []
     p_values = []
     sample = {}
 
@@ -531,12 +531,18 @@ def calculate_t_tests(data_list, names=None):
         sample[names[1]] = [data.loc[percentile, names[1]] for
                             data in data_list]
 
-        t, p = ttest_rel(sample[names[0]], sample[names[1]])
+        if analysis_type == 't-test':
+            statistic, p = ttest_rel(sample[names[0]], sample[names[1]])
+        elif analysis_type == 'wilcoxon':
+            statistic, p = wilcoxon(sample[names[0]], sample[names[1]])
+        else:
+            raise TypeError('Please specify a valid test: '
+                            't-test, wilcoxon.')
 
-        t_statistics.append(t)
+        statistics.append(statistic)
         p_values.append(p)
 
-    results = pd.DataFrame({'t': t_statistics, 'p': p_values}, index=index)
+    results = pd.DataFrame({'t': statistics, 'p': p_values}, index=index)
     results = results[['t', 'p']]
 
     return results
