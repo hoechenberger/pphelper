@@ -45,10 +45,6 @@ def gen_cdf(rts, t_max=None):
         A Series containing the estimated cumulative frequency polygon,
         indexed by the time points in ms.
 
-    See Also
-    --------
-    get_percentiles_from_cdf
-
     Notes
     -----
     Response times will be rounded to 1 millisecond.
@@ -92,6 +88,10 @@ def gen_cdf(rts, t_max=None):
     279    0.953846
     280    1.000000
     Length: 281, dtype: float64
+
+    See Also
+    --------
+    get_percentiles_from_cdf
 
     """
 
@@ -432,15 +432,15 @@ def plot_cdfs(data, colors=None, outfile=None):
     Displays the response time data plot if ``save`` is ``False``, or
     saves it to ``outfilename`` if ``save`` is ``True``.
 
-    See also
-    --------
-    compare_cdfs_from_raw_rts : Generate data in the correct input
-        format for this function.
-
     Notes
     -----
     If ``outfile`` is not supplied, plots will be displayed, but not saved
     to disk.
+
+    See also
+    --------
+    compare_cdfs_from_raw_rts : Generate data in the correct input
+        format for this function.
 
     """
 
@@ -448,7 +448,7 @@ def plot_cdfs(data, colors=None, outfile=None):
     if outfile:
         matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    # Larger fonts in plots
+    # Larger fonts in plots.
     matplotlib.rcParams.update({'font.size': 22})
 
     if colors is None:
@@ -485,8 +485,60 @@ def plot_cdfs(data, colors=None, outfile=None):
 
 def compare_cdfs_from_dataframe(data, rt_column='RT',
                                 modality_column='Modality',
+                                num_percentiles=10, percentiles=None,
                                 names=None,
                                 **kwargs):
+    """
+    Create cumulative distribution functions (CDFs) for response time data
+    and calculate the race model assumptions.
+
+    Parameters
+    ----------
+
+    data : DataFrame
+        A DataFrame with containing at least two columns: one with response
+        times, and another one specifying the corresponding modalities.
+    rt_column : string, optional
+        The name of the column containing the response times. Defaults
+        to ``RT``.
+    modality_column : string, optional
+        The name of the column containing the modalities corresponding
+        to the response times. Defaults to ``Modality``.
+    names : list, optional
+        A list of length 4, supplying the names of the modalities. The
+        first three elements specify the modalities in the input data to
+        consider. These three and the fourth argument are also used to
+        label the columns in the returned DataFrame.
+        If this argument is not supplied, a default list
+        ``['A', 'B', 'AB', 'A+B']`` will be used.
+
+    Returns
+    -------
+    results : DataFrame
+        A DataFrame containing the response times extracted from every CDF
+        at the specified (or generated) percentiles. The DataFrame contains
+        four columns. The column names are either those supplied via the
+        ``names`` argument, or the default values ``A``, ``B``, ``AB``,
+        and ``AB``.
+        The first three columns correspond to the input data ``rt_a``,
+        ``rt_b``, and ``rt_ab``, respectively). The fourth column contains
+        the sum of the CDFs generated from ``rt_a`` and ``rt_b``, i.e. the
+        hypothetically fastest no-integration case.
+        If, at any percentile, a value in the third column is less than the
+        corresponding value value in the fourth, the race model is
+        violated.
+
+    Notes
+    -----
+    This function internally calls ``compare_cdfs_from_raw_rts``. Please
+    see this function to find out about additional optional keyword
+    arguments.
+
+    See Also
+    --------
+    compare_cdfs_from_raw_rts
+
+    """
 
     if names is None:
         names = ['A', 'B', 'AB', 'A+B']
@@ -504,7 +556,55 @@ def compare_cdfs_from_dataframe(data, rt_column='RT',
     return result[names]
 
 
-def calculate_statistics(data_list, names=None, analysis_type='t-test'):
+def calculate_statistics(data_list, names=None, test_type='t-test'):
+    """
+    Test for violations of the race model inequality.
+
+    Parameters
+    ----------
+    data_list : list
+        A list of DataFrames. Each individual DataFrame should contain data
+        generated either by ``compare_cdfs_from_raw_rts`` or
+        ``compare_cdfs_from_dataframe``. Column names and indices of all
+        DataFrames must be equal.
+    names : list, optional
+        A list of strings contaning the names of the columns to compare.
+        Defaults to ``['AB', 'A+B']``.
+        The first element is passed as first population to the statistical
+        function, and the second element as the second. See the ``Notes``
+        section for implications.
+    test_type : string, optional
+        The statistical test to perform. Currently, valid values are
+        ``t-test`` for a pairwise t-test, and ``wilcoxon`` for a Wilcoxon
+        signed-rank test.
+
+    Returns
+    -------
+    results : DataFrame
+        A DataFrame containing the test statistic and ``p`` value for
+        every percentile.
+
+    Notes
+    -----
+        Since the first element in the ``names`` list is passed as first
+        argument to the statistical test function, and the second element
+        is passed as the second, in the test of a t-test a negative test
+        statistic implies a smaller mean in the first column than in the
+        second. Accordingly, a positive t-test statistic implied a greater
+        mean in the first column than in the second.
+
+    See Also
+    --------
+        ``compare_cdfs_from_raw_rts`` ``compare_cdfs_from_dataframe``
+
+    """
+
+    tests = ['t-test', 'wilcoxon']
+    if not test_type in tests:
+        raise TypeError('Please specify a valid test: '
+                    't-test, wilcoxon.')
+
+
     if names is None:
         names = ['AB', 'A+B']
 
@@ -518,8 +618,8 @@ def calculate_statistics(data_list, names=None, analysis_type='t-test'):
                 raise ValueError('Supplied data frames must have the same '
                                  'index.')
     except TypeError:
-                raise TypeError('Please supply a list of at least 3 '
-                                'data frames.')
+                raise TypeError('Please supply a list of at least 3 data '
+                                'frames.')
 
     statistics = []
     p_values = []
@@ -531,19 +631,16 @@ def calculate_statistics(data_list, names=None, analysis_type='t-test'):
         sample[names[1]] = [data.loc[percentile, names[1]] for
                             data in data_list]
 
-        if analysis_type == 't-test':
+        if test_type == 't-test':
             statistic, p = ttest_rel(sample[names[0]], sample[names[1]])
-        elif analysis_type == 'wilcoxon':
+        elif test_type == 'wilcoxon':
             statistic, p = wilcoxon(sample[names[0]], sample[names[1]])
-        else:
-            raise TypeError('Please specify a valid test: '
-                            't-test, wilcoxon.')
 
         statistics.append(statistic)
         p_values.append(p)
 
-    results = pd.DataFrame({'t': statistics, 'p': p_values}, index=index)
-    results = results[['t', 'p']]
+    results = pd.DataFrame({'statistic': statistics, 'p': p_values},
+                           index=index)
+    results = results[['statistic', 'p']]
 
     return results
-
