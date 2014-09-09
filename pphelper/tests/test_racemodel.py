@@ -20,7 +20,7 @@ from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
                                compare_cdfs_from_raw_rts, \
                                plot_cdfs, compare_cdfs_from_dataframe, \
-                               calculate_t_tests
+                               calculate_statistics
 
 
 def test_gen_step_fun_ordered():
@@ -812,14 +812,14 @@ def test_compare_cdfs_from_dataframe():
 
 
     result_expected = pd.DataFrame({'x': np.array([244.,     249.,     257.,     260.,     264.,
-                                                    268.,     271.,     274.,     277.,  290.125]),
-                                     'y': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
-                                                    256.2,  262.6,  272.,   282.2,  308.5]),
-                                     'z': np.array([234.6,         238.6,         240.375,       242.325,      244.13333333,
-                                                     248.9,         253.85,        256.75,        265.05,        278.5       ]),
-                                     'x+y': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
-                                                      252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
-                                    index=pd.Index(p, name='p'))
+                                                   268.,     271.,     274.,     277.,  290.125]),
+                                    'y': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
+                                                   256.2,  262.6,  272.,   282.2,  308.5]),
+                                    'z': np.array([234.6,         238.6,         240.375,       242.325,      244.13333333,
+                                                   248.9,         253.85,        256.75,        265.05,        278.5       ]),
+                                    'x+y': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
+                                                     252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
+                                   index=pd.Index(p, name='p'))
 
     names = ['x', 'y', 'z', 'x+y']
 
@@ -835,22 +835,8 @@ def test_compare_cdfs_from_dataframe():
     assert result.equals(result_expected)
     assert result.index.equals(result_expected.index)
 
-#
-# def test_calculate_t_tests():
-#     index = pd.Index(gen_percentiles(10))
-#
-#     data0 = pd.DataFrame({'AB': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
-#                           'A+B': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259])},
-#                          index=pd.Index(gen_percentiles(10)))
-#
-#     data1 = pd.DataFrame({'AB': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
-#                       'A+B': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259])},
-#                      index=pd.Index(gen_percentiles(10)))
-#
-#
-#     result = calculate_t_tests()
-#
-#
-#
-#
 
+def test_calculate_statistics():
+    # TODO
+    # Think about a way to implement a test for this.
+    pass
