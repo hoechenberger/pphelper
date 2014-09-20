@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 
 """
-   pphelper.racemodel
-   ==================
+pphelper.racemodel
+==================
 
-   Race model inequality analysis implementation, based on Ulrich, Miller,
-   and Schröter (2007): 'Testing the race model inequality: An algorithm
-   and computer programs', published in Behavior Research Methods 39 (2),
-   pp. 291-302.
+Race model inequality analysis implementation, based on Ulrich, Miller,
+and Schröter (2007): 'Testing the race model inequality: An algorithm
+and computer programs', published in Behavior Research Methods 39 (2),
+pp. 291-302.
 
-   Provides
-   --------
-     - ``compare_cdfs_from_raw_rts`` : Assess cumulative distribution functions from response time data and calculate the race model assumptions.
-     - ``compare_cdfs_from_dataframe`` : Assess cumulative distribution functions from response time data and calculate the race model assumptions.
-     - ``gen_cdf`` : Estimate the cumulative distribution function from response time data.
-     - ``gen_percentiles`` : Calculate equally spaced percentiles values.
-     - ``gen_step_fun`` : Generate a step function from a set of observed response times.
-     - ``get_percentiles_from_cdf`` : Get the values (response times) of a cumulative distribution function at the specified percentiles.
-     - ``calculate_statistics`` : Perform statistical tests.
+Provides
+--------
+ - ``compare_cdfs_from_raw_rts`` : Assess cumulative distribution functions from response time data and calculate the race model assumptions.
+ - ``compare_cdfs_from_dataframe`` : Assess cumulative distribution functions from response time data and calculate the race model assumptions.
+ - ``gen_cdf`` : Estimate the cumulative distribution function from response time data.
+ - ``gen_percentiles`` : Calculate equally spaced percentiles values.
+ - ``gen_step_fun`` : Generate a step function from a set of observed response times.
+ - ``get_percentiles_from_cdf`` : Get the values (response times) of a cumulative distribution function at the specified percentiles.
+ - ``calculate_statistics`` : Perform statistical tests.
 
 """
 
