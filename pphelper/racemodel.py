@@ -21,7 +21,7 @@ Provides
 
 """
 
-from __future__ import division
+from __future__ import division, unicode_literals
 import pandas as pd
 import numpy as np
 from scipy.stats import ttest_rel, wilcoxon
