@@ -565,6 +565,20 @@ def compare_cdfs_from_dataframe(data, rt_column='RT',
     if names is None:
         names = ['A', 'B', 'AB', 'A+B']
 
+    # FIXME
+    # Actually we should:
+    #   o filter the DataFrame so that the modality_colum only
+    #     contains elements supplied in the names array
+    #   o then check if all names are can actually be found in
+    #     that column
+    #   o only if that fails, raise the 'Could not find specified data'
+    #     error.
+    #
+    # Right now, the user cannot use this function if it is supposed to
+    # operate only on a subset of the data.
+    #
+    # When implementing this, also check whether the data object needs to
+    # be copied first -- we don't want to cause side-effects!
     if not data[modality_column].isin(names[:-1]).all():
         raise AssertionError('Could not find specified data.')
 
