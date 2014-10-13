@@ -565,9 +565,8 @@ def compare_cdfs_from_dataframe(data, rt_column='RT',
     if names is None:
         names = ['A', 'B', 'AB', 'A+B']
 
-    if not data[modality_column].isin(names).all():
-        raise AssertionError('Could not find specified data. '
-                             'Please check the ``names`` parameter.')
+    if not data[modality_column].isin(names[:-1]).all():
+        raise AssertionError('Could not find specified data.')
 
     rt_a = data.loc[data[modality_column] == names[0], rt_column]
     rt_b = data.loc[data[modality_column] == names[1], rt_column]
