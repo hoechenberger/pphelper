@@ -392,16 +392,16 @@ def compare_cdfs_from_raw_rts(rt_a, rt_b, rt_ab, num_percentiles=10,
 
     # Generate the cumulative distribution functions.
     cdf = dict()
-    for key in rt.keys():
-        cdf[key] = gen_cdf(rt[key], t_max=rt_max)
+    for name in rt.keys():
+        cdf[name] = gen_cdf(rt[name], t_max=rt_max)
 
     # Generate the hypothetical CDF for the no-integration case.
     cdf[names[3]] = cdf[names[0]] + cdf[names[1]]
 
     # Now fetch the corresponding values from the CDFs.
     results = pd.DataFrame()
-    for key in cdf.keys():
-        results[key] = get_percentiles_from_cdf(cdf[key], percentiles)
+    for name in cdf.keys():
+        results[name] = get_percentiles_from_cdf(cdf[name], percentiles)
 
     # Order columns
     results = results[names]
