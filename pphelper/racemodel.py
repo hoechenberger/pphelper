@@ -488,8 +488,7 @@ def plot_cdfs(data, colors=None, outfile=None):
 def compare_cdfs_from_dataframe(data, rt_column='RT',
                                 modality_column='Modality',
                                 num_percentiles=10, percentiles=None,
-                                names=None,
-                                **kwargs):
+                                names=None):
     """
     Create cumulative distribution functions (CDFs) for response time data
     and calculate the race model assumptions.
@@ -506,6 +505,13 @@ def compare_cdfs_from_dataframe(data, rt_column='RT',
     modality_column : string, optional
         The name of the column containing the modalities corresponding
         to the response times. Defaults to ``Modality``.
+    num_percentiles : scalar, optional
+        The number of percentiles to generate from the response time CDFs.
+        Will be ignored if ``percentiles`` is supplied.
+    percentiles : array_like, optional
+        The percentiles for which to get values from the response time
+        CDFs. If this argument is supplied, ``num_percentiles`` will be
+        ignored.
     names : list, optional
         A list of length 4, supplying the names of the modalities. The
         first three elements specify the modalities in the input data to
@@ -542,6 +548,20 @@ def compare_cdfs_from_dataframe(data, rt_column='RT',
 
     """
 
+    # If no percentile object was supplied, generate a set of percentiles
+    # for which to assess the RTs from
+    # the CDFs.
+    if percentiles is None:
+        percentiles = gen_percentiles(num_percentiles)
+    # If however we got a percentile object, try to convert it into a
+    # Numpy array.
+    else:
+        try:
+            percentiles = np.array(percentiles)
+        except ValueError:
+            raise ValueError('Please supply an array-like  percentile '
+                             'object.')
+
     if names is None:
         names = ['A', 'B', 'AB', 'A+B']
 
@@ -552,8 +572,10 @@ def compare_cdfs_from_dataframe(data, rt_column='RT',
     rt_b = data.loc[data[modality_column] == names[1], rt_column]
     rt_ab = data.loc[data[modality_column] == names[2], rt_column]
 
-    result = compare_cdfs_from_raw_rts(rt_a, rt_b, rt_ab, names=names,
-                                       **kwargs)
+    result = compare_cdfs_from_raw_rts(rt_a, rt_b, rt_ab,
+                                       num_percentiles=num_percentiles,
+                                       percentiles=percentiles,
+                                       names=names)
 
     return result[names]
 
