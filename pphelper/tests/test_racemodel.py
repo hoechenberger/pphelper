@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-Unit and (sort-of) integration tests for ``pphelper``.
-"""
-
 from __future__ import division
 import numpy as np
 import pandas as pd
