@@ -92,31 +92,3 @@ def lowpass_filter_image(image=None, filename=None, flatten=False,
         image = imread(filename, flatten=flatten)
 
     return ndimage.gaussian_filter(image, sigma)
-
-
-# TODO WIP
-def lowpass_filter_images(conditions, stimulusDirectory):
-    """Pre-load images and calculate FFT, amplitude, and phase spectrum"""
-
-    processed_images = dict()
-
-    for condition in conditions:
-        image_file = condition['image_file']
-        image_label = condition['label']
-        image_object = condition['object']
-
-        filename = stimulusDirectory + image_object + '/' + image_file
-
-        image_lowpass_filtered = lowpass_filter_image(filename=filename,
-                                                      flatten=True)
-
-        fft, amplitude, phase = fft_image(image_lowpass_filtered)
-
-        processed_images[image_label] = {
-            'Lowpass-Filtered': np.copy(image_lowpass_filtered),
-            'FFT': np.copy(fft),
-            'Amplitude': np.copy(amplitude),
-            'Phase': np.copy(phase)
-        }
-
-    return processed_images
