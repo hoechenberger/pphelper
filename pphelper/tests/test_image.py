@@ -19,7 +19,9 @@ def test_fft_image():
     amplitude_expected = np.load('data/tux_flattened_amplitude.npy')
     phase_expected = np.load('data/tux_flattened_phase.npy')
 
+    # FIXME
+    # This fails when pyfftw.interfaces.cache.enable() is called.
+    #
     # assert np.array_equal(fft, fft_expected)
     assert np.array_equal(amplitude, amplitude_expected)
     assert np.array_equal(phase, phase_expected)
-
