@@ -9,8 +9,8 @@ except ImportError:
     raise sys.exit('Could not import setuptools.')
 
 # Ger version info.
-# This basically imports __version__ from version.py.
-exec(open('pphelper/version.py').read())
+# This basically imports __version__ from _version.py.
+exec(open('pphelper/_version.py').read())
 
 setup(
     name='pphelper',
