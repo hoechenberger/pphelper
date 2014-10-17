@@ -451,6 +451,7 @@ def plot_cdfs(data, percentile_index='p', colors=None, outfile=None):
     """
 
     import matplotlib
+    # matplotlib.use() has to be called before importing pyplot.
     if outfile:
         matplotlib.use('Agg')
     import matplotlib.pyplot as plt
