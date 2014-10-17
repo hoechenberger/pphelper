@@ -11,6 +11,7 @@ before_install:
   - sudo apt-get install libatlas-base-dev gfortran libfftw3-3 libfftw3-dev
 
 install:
+  - pip install PIL
   - pip install numpy
   - pip install matplotlib
   - pip install scipy
