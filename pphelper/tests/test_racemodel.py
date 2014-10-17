@@ -799,6 +799,7 @@ def test_plot_cdfs_save():
     result = compare_images(outfile_expected, outfile, 0.001)
     assert not result
 
+
 def test_compare_cdfs_from_dataframe():
 
     data = pd.DataFrame({'RT': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291,
@@ -809,7 +810,6 @@ def test_compare_cdfs_from_dataframe():
                                       'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', ]})
 
     p = gen_percentiles(10)
-
 
     result_expected = pd.DataFrame({'x': np.array([244.,     249.,     257.,     260.,     264.,
                                                    268.,     271.,     274.,     277.,  290.125]),
@@ -834,7 +834,6 @@ def test_compare_cdfs_from_dataframe():
 
     assert result.equals(result_expected)
     assert result.index.equals(result_expected.index)
-
 
 def test_calculate_statistics():
     # TODO
