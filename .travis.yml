@@ -9,9 +9,11 @@ python:
 before_install:
   - sudo apt-get update
   - sudo apt-get install libatlas-base-dev gfortran libfftw3-3 libfftw3-dev
+  # For Pillow:
+  - sudo apt-get install libtiff4-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms1-dev libwebp-dev
 
 install:
-  - pip install PIL
+  - pip install Pillow
   - pip install numpy
   - pip install matplotlib
   - pip install scipy
