@@ -20,7 +20,7 @@ def test_lowpass_filter_image():
 def test_fft_image():
     image = np.load(data_directory + 'tux_flattened.npy')
 
-    with open(data_directory + 'fftw3-wisdom.pickle', 'r') as f:
+    with open(data_directory + 'fftw3-wisdom.pickle', 'rb') as f:
         pyfftw.import_wisdom(pickle.load(f))
     fft, amplitude, phase = fft_image(image)
 
