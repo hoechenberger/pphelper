@@ -435,8 +435,8 @@ def plot_cdfs(data, percentile_index='p', colors=None, outfile=None):
 
     Returns
     -------
-    Displays the response time data plot if ``save`` is ``False``, or
-    saves it to ``outfilename`` if ``save`` is ``True``.
+    fig
+        The matplotlib figure object.
 
     Notes
     -----
@@ -468,7 +468,7 @@ def plot_cdfs(data, percentile_index='p', colors=None, outfile=None):
     else:
         index = data.index.levels[data.index.names.index(percentile_index)]
 
-    plt.figure(figsize=[12, 8])
+    fig = plt.figure(figsize=[12, 8])
     plt.hold(True)
     for modality in data.columns:
         plt.plot(data[modality],
@@ -486,14 +486,12 @@ def plot_cdfs(data, percentile_index='p', colors=None, outfile=None):
 
     if outfile:
         try:
-            plt.savefig(outfile)
-            plt.close()
+            fig.savefig(outfile)
         except IOError:
             raise IOError('Could not save the figure. Please check the '
                           'supplied path.')
-    else:
-        plt.show()
-        return True
+
+    return fig
 
 
 def compare_cdfs_from_dataframe(data, rt_column='RT',
