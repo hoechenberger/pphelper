@@ -14,6 +14,7 @@ Provides
 """
 
 from __future__ import unicode_literals
+import sys
 import pandas as pd
 
 
@@ -45,7 +46,12 @@ def add_zero_padding(data, length=3, return_series=True):
 
     """
     data = pd.Series(data)
-    result = data.apply(lambda x: unicode(x).zfill(length))
+
+    # Unicode is the default in Python >= 3.0.
+    if sys.version_info > (3, 0):
+        result = data.apply(lambda x: str(x).zfill(length))
+    else:
+        result = data.apply(lambda x: unicode(x).zfill(length))
 
     if return_series:
         return result
