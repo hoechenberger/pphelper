@@ -18,8 +18,8 @@ from matplotlib.testing.compare import compare_images
 
 from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
-                               compare_cdfs_from_raw_rts, \
-                               plot_cdfs, compare_cdfs_from_dataframe, \
+                               gen_cdfs_from_raw_rts, \
+                               plot_cdfs, gen_cdfs_from_dataframe, \
                                calculate_statistics
 
 
@@ -610,7 +610,7 @@ def test_get_percentiles_from_cdf():
 
 def test_compare_cdfs_from_raw_rts():
     """
-    Test compare_cdfs_from_raw_rts().
+    Test gen_cdfs_from_raw_rts().
     """
     rts = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
            'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
@@ -631,7 +631,7 @@ def test_compare_cdfs_from_raw_rts():
     # Order columns.
     results_expected = results_expected[['A', 'B', 'AB', 'A+B']]
 
-    results = compare_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'])
+    results = gen_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'])
 
     # Round the results for comparison.
     results = results.apply(np.around, axis=0)
@@ -666,7 +666,7 @@ def test_compare_cdfs_from_raw_rts_with_percentiles_argument():
     # Order columns.
     results_expected = results_expected[['A', 'B', 'AB', 'A+B']]
 
-    results = compare_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'],
+    results = gen_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'],
                                         percentiles=p)
 
     # Round the results for comparison.
@@ -702,7 +702,7 @@ def test_compare_cdfs_from_raw_rts_with_names_argument():
     # Order columns.
     results_expected = results_expected[['A', 'V', 'AV', 'A+V']]
 
-    results = compare_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'],
+    results = gen_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'],
                                         names=['A', 'V', 'AV', 'A+V'])
 
     results = results.apply(np.around, axis=0)
@@ -736,7 +736,7 @@ def test_compare_cdfs_from_raw_rts_with_percentiles_and_names_argument():
 
     results_expected = results_expected[['A', 'V', 'AV', 'A+V']]
 
-    results = compare_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'],
+    results = gen_cdfs_from_raw_rts(rts['x'], rts['y'], rts['z'],
                                         percentiles=p,
                                         names=['A', 'V', 'AV', 'A+V'])
 
@@ -824,7 +824,7 @@ def test_compare_cdfs_from_dataframe():
     names = ['x', 'y', 'z', 'x+y']
 
     result_expected = result_expected[names]
-    result = compare_cdfs_from_dataframe(data, rt_column='RT',
+    result = gen_cdfs_from_dataframe(data, rt_column='RT',
                                          modality_column='Modality',
                                          names=names,
                                          percentiles=p)

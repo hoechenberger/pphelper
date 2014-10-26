@@ -6,6 +6,7 @@ v0.5, 2014-XX-XX
 ******************
 - Add t-tests and wilcoxon signed-rank tests (``calculate_statistics()``).
 - Add raw data comparison from a DataFrame (``compare_cdfs_from_dataframe``).
+- ``compare_*`` functions renamed to ``gen_*``.
 - Add ``utils`` module.
 
 ******************
