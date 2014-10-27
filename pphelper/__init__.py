@@ -6,7 +6,7 @@
 
 """
 
-from ._version import __version__
+from .version import __version__
 from . import racemodel
 
-__all__ = ['racemodel', 'image']
+__all__ = ['racemodel', 'utils', 'image']
