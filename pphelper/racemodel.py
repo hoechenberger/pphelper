@@ -623,23 +623,20 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
     return result[names]
 
 
-def calculate_statistics(data_list, names=None, test_type='t-test'):
+def ttest(data, left='A', right='B', group_by=None, test_type='t-test'):
     """
-    Test for violations of the race model inequality.
-
     Parameters
     ----------
-    data_list : list
-        A list of DataFrames. Each individual DataFrame should contain data
-        generated either by ``gen_cdfs_from_raw_rts`` or
-        ``gen_cdfs_from_dataframe``. Column names and indices of all
-        DataFrames must be equal.
-    names : list, optional
-        A list of strings contaning the names of the columns to compare.
-        Defaults to ``['AB', 'A+B']``.
-        The first element is passed as first population to the statistical
-        function, and the second element as the second. See the ``Notes``
-        section for implications.
+    data : DataFrame
+        The input data.
+    left : string
+        The name of the column to use as the 'left' side of the test.
+    right : string
+        The name of the column to use as the 'right' side of the test.
+    group_by : string or list of strings, optional
+        The names of index or data columns to split the data by before
+        running the statistical tests.
+        If ``None``, the data will not be split before testing.
     test_type : string, optional
         The statistical test to perform. Currently, valid values are
         ``t-test`` for a pairwise t-test, and ``wilcoxon`` for a Wilcoxon
@@ -647,66 +644,40 @@ def calculate_statistics(data_list, names=None, test_type='t-test'):
 
     Returns
     -------
-    results : DataFrame
+    results : Series or DataFrame
         A DataFrame containing the test statistic and ``p`` value for
         every percentile.
 
     Notes
     -----
-        Since the first element in the ``names`` list is passed as first
-        argument to the statistical test function, and the second element
-        is passed as the second, in the test of a t-test a negative test
-        statistic implies a smaller mean in the first column than in the
-        second. Accordingly, a positive t-test statistic implied a greater
-        mean in the first column than in the second.
-
-    See Also
-    --------
-        ``gen_cdfs_from_raw_rts`` ``gen_cdfs_from_dataframe``
+    A positive test statistic indicates that the 'left' mean is greater
+    than the right mean, and vice versa.
 
     """
 
-    tests = ['t-test', 'wilcoxon']
-    if not test_type in tests:
+    test_types = ['t-test', 'wilcoxon']
+    if test_type not in test_types:
         raise TypeError('Please specify a valid test: '
                         't-test, wilcoxon.')
 
-    if names is None:
-        names = ['AB', 'A+B']
+    if (left not in data.columns) or (right not in data.columns):
+        raise IndexError('The columns specified for comparison could'
+                         'not be found.')
 
-    if len(data_list) < 3:
-        raise TypeError('Please supply a list of at least 3 data frames.')
+    if test_type == 't-test':
+        test_fun = ttest_rel
+    elif test_type == 'wilcoxon':
+        test_fun = wilcoxon
 
-    try:
-        index = data_list[0].index.copy()
-        for data in data_list[1:]:
-            if not index.equals(data.index):
-                raise ValueError('Supplied data frames must have the same '
-                                 'index.')
-    except TypeError:
-                raise TypeError('Please supply a list of at least 3 data '
-                                'frames.')
-
-    statistics = []
-    p_values = []
-    sample = {}
-
-    for percentile in index:
-        sample[names[0]] = [data.loc[percentile, names[0]] for
-                            data in data_list]
-        sample[names[1]] = [data.loc[percentile, names[1]] for
-                            data in data_list]
-
-        if test_type == 't-test':
-            statistic, p = ttest_rel(sample[names[0]], sample[names[1]])
-        elif test_type == 'wilcoxon':
-            statistic, p = wilcoxon(sample[names[0]], sample[names[1]])
-
-        statistics.append(statistic)
-        p_values.append(p)
-
-    results = pd.DataFrame({'statistic': statistics, 'p': p_values},
-                           index=index)
-    results = results[['statistic', 'p']]
+    if group_by is None:
+        statistic, p = test_fun(data[left], data[right])
+        results = pd.Series([statistic, p],
+                            index=pd.Index(['statistic', 'p-value']))
+    else:
+        results = data.reset_index().groupby(group_by).apply(
+            lambda x: pd.Series(test_fun(x[left], x[right]),
+                                index=pd.Index(['statistic',
+                                                'p-value']))
+        )
 
     return results

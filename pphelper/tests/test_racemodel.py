@@ -20,7 +20,7 @@ from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
                                gen_cdfs_from_raw_rts, \
                                plot_cdfs, gen_cdfs_from_dataframe, \
-                               calculate_statistics
+                               ttest
 
 
 def test_gen_step_fun_ordered():
@@ -835,7 +835,52 @@ def test_compare_cdfs_from_dataframe():
     assert result.equals(result_expected)
     assert result.index.equals(result_expected.index)
 
-def test_calculate_statistics():
-    # TODO
-    # Think about a way to implement a test for this.
-    pass
+
+def test_ttest_without_grouping():
+    np.random.seed(123456)
+    index = pd.MultiIndex.from_product([['001', '002', '003'],
+                                        [0.1, 0.3, 0.5, 0.7, 0.9]],
+                                       names=['Participant', 'p'])
+
+    data = pd.DataFrame(index=index)
+    data['A'] = pd.Series(np.random.random_sample(3*5), index=index)
+    data['B'] = pd.Series(2.5 * np.random.random_sample(3*5), index=index)
+
+    result = ttest(data, left='A', right='B', test_type='wilcoxon')
+
+    result_expected = pd.Series(np.array([18.0, 0.017058718531494516]),
+                                index=pd.Index(['statistic', 'p-value']))
+
+    assert result.equals(result_expected)
+    assert result.index.equals(result_expected.index)
+
+
+def test_ttest_with_grouping():
+    np.random.seed(123456)
+    index = pd.MultiIndex.from_product([['001', '002', '003', '004',
+                                         '005', '006', '007', '008',
+                                         '009', '010', '011', '012'],
+                                        [0.1, 0.3, 0.5, 0.7, 0.9]],
+                                       names=['Participant', 'p'])
+
+    data = pd.DataFrame(index=index)
+    data['A'] = pd.Series(np.random.random_sample(12*5), index=index)
+    data['B'] = pd.Series(2.5 * np.random.random_sample(12*5), index=index)
+
+    result = ttest(data, left='A', right='B', group_by='p',
+                   test_type='wilcoxon')
+
+    result_expected = pd.DataFrame(
+        {'statistic': np.array([13.0, 8.0, 4.0, 13.0, 10.0]),
+         'p-value': np.array([0.0413894040091, 0.0150223385531,
+                              0.00603955904866, 0.0413894040091,
+                              0.0229090993544])},
+        index=data.index.levels[data.index.names.index('p')])
+    result_expected = result_expected[['statistic', 'p-value']]
+
+    # We compare each column individually (and the p-value column
+    # using np.allclose()) because apparently Pandas's
+    # DataFrame.equals() is too sensitive for even small deviations.
+    assert result['statistic'].equals(result_expected['statistic'])
+    assert np.allclose(result['p-value'], result_expected['p-value'])
+    assert result.index.equals(result_expected.index)
