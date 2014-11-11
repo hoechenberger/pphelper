@@ -27,6 +27,7 @@ import numpy as np
 from scipy.stats import ttest_rel, wilcoxon
 from . import utils
 
+
 def gen_cdf(rts, t_max=None):
     """
     Estimate the cumulative frequency polygon from response time data.
