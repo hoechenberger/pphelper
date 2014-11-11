@@ -5,7 +5,8 @@ Changelog
 v0.5, 2014-XX-XX
 ****************
 - ``compare_*`` functions renamed to ``gen_*``.
-- Add raw data comparison from a DataFrame (``gen_cdfs_from_dataframe``).
+- ``get_cdf*`` functions renamed to ``get_percentiles*``.
+- Add raw data comparison from a DataFrame (``get_percentiles_from_dataframe``).
 - Add ``utils`` module.
 - Add t-tests and wilcoxon signed-rank tests (``ttest``).
 
