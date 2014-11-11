@@ -16,6 +16,8 @@ Provides
 from __future__ import unicode_literals
 import sys
 import pandas as pd
+import itertools
+import numpy as np
 
 
 def add_zero_padding(data, length=3, return_series=True):
@@ -57,3 +59,21 @@ def add_zero_padding(data, length=3, return_series=True):
         return result
     else:
         return result.values
+
+
+def get_max_from_list(x):
+    """
+    Return the maximum value from a list or a list of lists.
+
+    Parameters
+    ----------
+    x : list
+        A list or a list of lists.
+
+    Returns
+    -------
+    float
+        The maximum value.
+
+    """
+    return np.array(list(itertools.chain.from_iterable(x))).max()
