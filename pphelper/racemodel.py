@@ -45,7 +45,7 @@ def gen_cdf(rts, t_max=None):
 
     Returns
     -------
-    Series
+    DataFrame or Series
         A Series containing the estimated cumulative frequency polygon,
         indexed by the time points in ms.
 
@@ -164,7 +164,8 @@ def gen_cdf(rts, t_max=None):
     return pd.Series(result, index=pd.Index(timeline, name='t'))
 
 
-def gen_cdfs_from_list(data, t_max=None, names=None):
+def gen_cdfs_from_list(data, t_max=None, names=None,
+                       return_type='dataframe'):
     """
     Estimate the empirical CDFs for a list of arrays.
 
@@ -179,11 +180,15 @@ def gen_cdfs_from_list(data, t_max=None, names=None):
         Up to which time point (in milliseconds) the model should be
         calculated. If not specified, the maximum value of the supplied
         input data will be used.
+    return_type : {'dataframe', 'list'}
+        The format of the returned object. `dataframe` returns a
+        DataFrame, `list` returns a list of `Series`.
 
     Returns
     -------
-    list of Series
-    A list of the estimated empirical CDFs.
+    DataFrame or list of Series
+        The estimated empirical CDFs as columns of a DataFrame (default)
+        or as a list of Series (if `return_type='list'`).
 
     Raises
     ------
