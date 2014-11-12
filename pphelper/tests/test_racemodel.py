@@ -439,6 +439,19 @@ def test_gen_cdf_tmax_is_none():
     assert cdf.index.equals(cdf_expected.index)
 
 
+def test_gen_cdf_negative_rt():
+    rt_a = np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256,
+                     259, 270, 280])
+    rt_b =  np.array([-30, 234, 238, 240, 240, -100, 243, 243, 245, 251,
+                      254, 256, 259, 270, -5, 280])
+
+    result_expected = gen_cdf(rt_a)
+    result = gen_cdf(rt_b)
+
+    assert result.equals(result_expected)
+    assert result.index.equals(result_expected.index)
+
+
 def test_gen_percentiles():
     """
     Test gen_percentiles().

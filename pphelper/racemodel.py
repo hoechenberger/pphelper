@@ -25,6 +25,7 @@ from __future__ import division, unicode_literals
 import pandas as pd
 import numpy as np
 from scipy.stats import ttest_rel, wilcoxon
+import warnings
 from . import utils
 
 
@@ -103,6 +104,12 @@ def gen_cdf(rts, t_max=None):
 
     # Convert input data to a Series, and round to 1 ms
     rts = pd.Series(rts).round().astype('int')
+
+    if any(rts < 0):
+        rts = rts[rts >= 0]
+        warnings.warn('At least one supplied response time was '
+                      'less than zero and removed before '
+                      'estimating the empirical CDF.')
 
     if t_max is None:
         t_max = rts.max()
