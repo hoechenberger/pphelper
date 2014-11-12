@@ -9,7 +9,7 @@ v0.5, 2014-XX-XX
 - Add raw data comparison from a DataFrame (``get_percentiles_from_dataframe``).
 - Add ``utils`` module.
 - Add t-tests and wilcoxon signed-rank tests (``ttest``).
-
+- Add sum_cdfs() to calculate the sum of an arbitrary number of CDFs.
 
 ******************
 v0.3.1, 2014-09-01

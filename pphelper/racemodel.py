@@ -482,3 +482,30 @@ def ttest(data, left='A', right='B', group_by=None, test_type='t-test'):
         )
 
     return results
+
+
+def sum_cdfs(cdfs):
+    """
+    Calculate the sum of multiple cumulative distribution functions.
+
+    Parameters
+    ----------
+    cdfs : list
+        A list of array_like objects representing the CDFs to sum up.
+
+    Returns
+    -------
+    ndarray
+        The sum of the CDFs in the interval [0, 1].
+
+    Notes
+    -----
+    First calculates the sum of the CDFs, and returns the element-wise
+    minima `min[(sum, 1)`.
+
+    """
+    cdf_lengths_equal = all([cdf.shape == cdfs[0].shape for cdf in cdfs])
+    if not cdf_lengths_equal:
+        raise ValueError('Please supply CDFs with the same lengths.')
+
+    return np.minimum(np.sum(cdfs, axis=0), 1)

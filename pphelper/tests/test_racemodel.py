@@ -19,7 +19,7 @@ from matplotlib.testing.compare import compare_images
 from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
                                plot_cdfs, \
-                               gen_cdfs_from_list, \
+                               gen_cdfs_from_list, sum_cdfs, \
                                ttest
 
 
@@ -917,3 +917,42 @@ def test_ttest_with_grouping():
     assert result['statistic'].equals(result_expected['statistic'])
     assert np.allclose(result['p-value'], result_expected['p-value'])
     assert result.index.equals(result_expected.index)
+
+
+def test_sum_cdfs():
+    np.random.seed(123456)
+    cdfs = []
+
+    for i in range(1, 4):
+        sample = np.random.random_sample(15)
+        cdf = sample.cumsum() / sample.cumsum()[-1]
+        cdfs.append(cdf)
+
+    result = sum_cdfs(cdfs)
+    result_expected = np.array(
+        [ 0.19581884,  0.36311811,  0.63192306,  0.94305456,  1.        ,
+          1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+          1.        ,  1.        ,  1.        ,  1.        ,  1.        ])
+
+    assert np.allclose(result, result_expected)
+
+
+def test_sum_cdfs_unequal_lengths():
+    np.random.seed(123456)
+    cdfs = []
+
+    for i in range(1, 4):
+        sample = np.random.random_sample(10 * i)
+        cdf = sample.cumsum() / sample.cumsum()[-1]
+        cdfs.append(cdf)
+
+    # Trying to sum up CDFs of different lengths should
+    # raise an exception.
+    exception_raised = False
+
+    try:
+        sum_cdfs(cdfs)
+    except ValueError:
+        exception_raised = True
+
+    assert exception_raised is True
