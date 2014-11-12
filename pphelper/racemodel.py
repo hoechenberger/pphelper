@@ -48,6 +48,10 @@ def gen_cdf(rts, t_max=None):
         A Series containing the estimated cumulative frequency polygon,
         indexed by the time points in ms.
 
+    See Also
+    --------
+    get_percentiles_from_cdf
+
     Notes
     -----
     Response times will be rounded to 1 millisecond.
@@ -94,10 +98,6 @@ def gen_cdf(rts, t_max=None):
     279    0.953846
     280    1.000000
     Length: 281, dtype: float64
-
-    See Also
-    --------
-    get_percentiles_from_cdf
 
     """
 
@@ -173,10 +173,93 @@ def gen_cdfs_from_list(data, t_max=None, names=None):
         calculated. If not specified, the maximum value of the supplied
         input data will be used.
 
-    Return
-    ------
+    Returns
+    -------
     list of Series
     A list of the estimated empirical CDFs.
+
+    Raises
+    ------
+    ValueError
+        If the `name` parameter does not have the same lengths as the
+        data list.
+
+    See Also
+    --------
+    `gen_cdf`, `gen_step_fun`
+
+    Examples
+    --------
+    >>> from pphelper.racemodel import gen_cdfs_from_list
+    >>> import numpy as np
+    >>> RTs = [np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270,
+     280]), np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291])]
+    >>> gen_cdfs_from_list(RTs, names=['CondA', 'CondB'])
+            CondA     CondB
+    t
+    0    0.000000  0.000000
+    1    0.000000  0.000000
+    2    0.000000  0.000000
+    3    0.000000  0.000000
+    4    0.000000  0.000000
+    5    0.000000  0.000000
+    6    0.000000  0.000000
+    7    0.000000  0.000000
+    8    0.000000  0.000000
+    9    0.000000  0.000000
+    10   0.000000  0.000000
+    11   0.000000  0.000000
+    12   0.000000  0.000000
+    13   0.000000  0.000000
+    14   0.000000  0.000000
+    15   0.000000  0.000000
+    16   0.000000  0.000000
+    17   0.000000  0.000000
+    18   0.000000  0.000000
+    19   0.000000  0.000000
+    20   0.000000  0.000000
+    21   0.000000  0.000000
+    22   0.000000  0.000000
+    23   0.000000  0.000000
+    24   0.000000  0.000000
+    25   0.000000  0.000000
+    26   0.000000  0.000000
+    27   0.000000  0.000000
+    28   0.000000  0.000000
+    29   0.000000  0.000000
+    ..        ...       ...
+    262  0.828671  0.400000
+    263  0.835664  0.425000
+    264  0.842657  0.450000
+    265  0.849650  0.475000
+    266  0.856643  0.500000
+    267  0.863636  0.525000
+    268  0.870629  0.550000
+    269  0.877622  0.583333
+    270  0.884615  0.616667
+    271  0.892308  0.650000
+    272  0.900000  0.683333
+    273  0.907692  0.716667
+    274  0.915385  0.750000
+    275  0.923077  0.783333
+    276  0.930769  0.816667
+    277  0.938462  0.850000
+    278  0.946154  0.857143
+    279  0.953846  0.864286
+    280  1.000000  0.871429
+    281  1.000000  0.878571
+    282  1.000000  0.885714
+    283  1.000000  0.892857
+    284  1.000000  0.900000
+    285  1.000000  0.907143
+    286  1.000000  0.914286
+    287  1.000000  0.921429
+    288  1.000000  0.928571
+    289  1.000000  0.935714
+    290  1.000000  0.942857
+    291  1.000000  1.000000
+
+    [292 rows x 2 columns]
 
     """
 
@@ -208,6 +291,12 @@ def gen_percentiles(n=10):
     -------
     p : ndarray
         1-dimensional array of the calculated percentiles.
+
+    Raises
+    ------
+    TypeError
+        If the supplied percentile number could not be converted to a
+        rounded integer.
 
     See Also
     --------
@@ -251,6 +340,12 @@ def get_percentiles_from_cdf(cdf, p):
     Series
         Returns a Series of interpolated percentile boundaries (fictive
         response times).
+
+    Raises
+    ------
+    TypeError
+        If the supplied percentile object could not be cast into an array,
+        or if the CDF object is not a Series.
 
     See Also
     --------
@@ -319,6 +414,10 @@ def gen_step_fun(rts):
         A Series of the ordered response times (smallest to largest),
         indexed by their respective percentiles.
 
+    See Also
+    --------
+    `gen_cdf`, `gen_cdfs_from_list`
+
     Examples
     --------
     >>> from pphelper.racemodel import gen_step_fun
@@ -367,15 +466,19 @@ def plot_cdfs(data, percentile_index='p', colors=None, outfile=None):
     fig
         The matplotlib figure object.
 
+    Raises
+    ------
+    IOError
+        If the output file could not be written.
+
+    See also
+    --------
+    `get_percentiles_from_cdf`
+
     Notes
     -----
     If ``outfile`` is not supplied, plots will be displayed, but not saved
     to disk.
-
-    See also
-    --------
-    get_percentiles_from_raw_rts : Generate data in the correct input
-        format for this function.
 
     """
 
@@ -449,6 +552,14 @@ def ttest(data, left='A', right='B', group_by=None, test_type='t-test'):
         A DataFrame containing the test statistic and ``p`` value for
         every percentile.
 
+    Raises
+    ------
+    TypeError
+        If the supplied test type is not supported.
+    IndexError
+        If the columns to compare could not be found in the supplied
+        DataFrame.
+
     Notes
     -----
     A positive test statistic indicates that the 'left' mean is greater
@@ -498,14 +609,86 @@ def sum_cdfs(cdfs):
     ndarray
         The sum of the CDFs in the interval [0, 1].
 
+    Raises
+    ------
+    ValueError
+        If the supplied CDFs have unequal lengths.
+
     Notes
     -----
     First calculates the sum of the CDFs, and returns the element-wise
     minima `min[(sum, 1)`.
 
+    Examples
+    --------
+    >>> from pphelper.racemodel import gen_cdfs_from_list, sum_cdfs
+    >>> import numpy as np
+    >>> RTs = [np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280]), np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291])]
+    >>> cdfs = gen_cdfs_from_list(RTs, names=['A', 'B'])
+    >>> sum_cdfs([cdfs['A'], cdfs['B']])
+    array([ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+            0.        ,  0.        ,  0.        ,  0.        ,  0.03846154,
+            0.05769231,  0.07692308,  0.09615385,  0.11538462,  0.17307692,
+            0.23076923,  0.28205128,  0.33333333,  0.38461538,  0.49230769,
+            0.57      ,  0.60282051,  0.63564103,  0.66846154,  0.70128205,
+            0.72660256,  0.75192308,  0.7900641 ,  0.82820513,  0.86634615,
+            0.91730769,  0.96826923,  1.        ,  1.        ,  1.        ,
+            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
+            1.        ,  1.        ])
+
     """
     cdf_lengths_equal = all([cdf.shape == cdfs[0].shape for cdf in cdfs])
     if not cdf_lengths_equal:
-        raise ValueError('Please supply CDFs with the same lengths.')
+        raise ValueError('Please supply CDFs with equal lengths.')
 
     return np.minimum(np.sum(cdfs, axis=0), 1)
