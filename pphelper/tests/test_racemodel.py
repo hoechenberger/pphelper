@@ -22,8 +22,6 @@ from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_cdfs_from_list, \
                                ttest
 
-from pphelper.utils import get_max_from_list
-
 
 def test_gen_step_fun_ordered():
     """
@@ -919,14 +917,3 @@ def test_ttest_with_grouping():
     assert result['statistic'].equals(result_expected['statistic'])
     assert np.allclose(result['p-value'], result_expected['p-value'])
     assert result.index.equals(result_expected.index)
-
-
-def test_get_max_from_list():
-    data = [range(10),
-            range(1, 50),
-            range(3, 5)]
-
-    result_expected = 49
-    result = get_max_from_list(data)
-
-    assert result == result_expected
