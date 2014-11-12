@@ -113,7 +113,7 @@ def gen_cdf(rts, t_max=None):
     # in the paper:
     #
     # C == rts
-    # n == n_sorted
+    # n == n
     # k == n_unique
     # N == rt_count
     # s == rt_cumsum
@@ -121,7 +121,7 @@ def gen_cdf(rts, t_max=None):
     rts_sorted = rts.order()
     rts_unique = rts_sorted.unique()
 
-    n_sorted = rts_sorted.size
+    n = rts_sorted.size
     n_unique = rts_unique.size
 
     # Number of occurrences of each element.
@@ -145,7 +145,7 @@ def gen_cdf(rts, t_max=None):
         elif t >= rts_unique[-1]:
             result[t] = 1
         elif i < n_unique:
-            result[t] = 1/n_sorted * \
+            result[t] = 1/n * \
                 (rt_cumsum[i-1] + rt_count[i]/2 +
                  (rt_count[i] + rt_count[i+1]) / 2 *
                  (t - rts_unique[i]) /
