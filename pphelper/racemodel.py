@@ -266,15 +266,170 @@ def gen_cdfs_from_list(data, t_max=None, names=None):
     if t_max is None:
         t_max = utils.get_max_from_list(data)
 
-    if names and (len(data) != len(names)):
+    if (names is not None) and (len(data) != len(names)):
         raise ValueError('Please supply a name parameter with the same'
                          'number of elements as your data list.')
 
     results = pd.DataFrame([gen_cdf(x, t_max=t_max) for x in data]).T
-    if names:
+    if names is not None:
         results.columns = names
 
     return results
+
+
+def gen_cdfs_from_dataframe(data, rt_column='RT',
+                            modality_column='Modality',
+                            names=None):
+    """
+    Create cumulative distribution functions (CDFs) for response time data.
+
+    Parameters
+    ----------
+
+    data : DataFrame
+        A DataFrame with containing at least two columns: one with response
+        times, and another one specifying the corresponding modalities.
+    rt_column : string, optional
+        The name of the column containing the response times. Defaults
+        to ``RT``.
+    modality_column : string, optional
+        The name of the column containing the modalities corresponding
+        to the response times. Defaults to ``Modality``.
+    names : list, optional
+        A list of length 4, supplying the names of the modalities. The
+        first three elements specify the modalities in the input data to
+        consider. These three and the fourth argument are also used to
+        label the columns in the returned DataFrame.
+        If this argument is not supplied, a default list
+        ``['A', 'B', 'AB']`` will be used.
+
+    Returns
+    -------
+    results : DataFrame
+        A DataFrame containing the empirical cumulative distribution
+        functions generated from the input, one CDF per column. The number
+        of columns depends on the number of unique values in the
+        `modality_column` or on the `names` argument,
+
+    See Also
+    --------
+    `gen_cdf`, `gen_cdfs_from_list`
+
+    Notes
+    -----
+    This function internally calls ``gen_cdf``. Please
+    see this function to find out about additional optional keyword
+    arguments.
+
+    Examples
+    --------
+
+    >>> from pphelper.racemodel import gen_cdfs_from_dataframe
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> data = pd.DataFrame({'RT': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291,
+    ... 245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319,
+    ... 234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280]),
+    ... 'Modality': ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
+    ... 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y',
+    ... 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', ]})
+    >>> gen_cdfs_from_dataframe(data)
+                x         y  z
+    t
+    0    0.000000  0.000000  0
+    1    0.000000  0.000000  0
+    2    0.000000  0.000000  0
+    3    0.000000  0.000000  0
+    4    0.000000  0.000000  0
+    5    0.000000  0.000000  0
+    6    0.000000  0.000000  0
+    7    0.000000  0.000000  0
+    8    0.000000  0.000000  0
+    9    0.000000  0.000000  0
+    10   0.000000  0.000000  0
+    11   0.000000  0.000000  0
+    12   0.000000  0.000000  0
+    13   0.000000  0.000000  0
+    14   0.000000  0.000000  0
+    15   0.000000  0.000000  0
+    16   0.000000  0.000000  0
+    17   0.000000  0.000000  0
+    18   0.000000  0.000000  0
+    19   0.000000  0.000000  0
+    20   0.000000  0.000000  0
+    21   0.000000  0.000000  0
+    22   0.000000  0.000000  0
+    23   0.000000  0.000000  0
+    24   0.000000  0.000000  0
+    25   0.000000  0.000000  0
+    26   0.000000  0.000000  0
+    27   0.000000  0.000000  0
+    28   0.000000  0.000000  0
+    29   0.000000  0.000000  0
+    ..        ...       ... ..
+    290  0.942857  0.916964  1
+    291  1.000000  0.918750  1
+    292  1.000000  0.920536  1
+    293  1.000000  0.922321  1
+    294  1.000000  0.924107  1
+    295  1.000000  0.925893  1
+    296  1.000000  0.927679  1
+    297  1.000000  0.929464  1
+    298  1.000000  0.931250  1
+    299  1.000000  0.933036  1
+    300  1.000000  0.934821  1
+    301  1.000000  0.936607  1
+    302  1.000000  0.938393  1
+    303  1.000000  0.940179  1
+    304  1.000000  0.941964  1
+    305  1.000000  0.943750  1
+    306  1.000000  0.945536  1
+    307  1.000000  0.947321  1
+    308  1.000000  0.949107  1
+    309  1.000000  0.950893  1
+    310  1.000000  0.952679  1
+    311  1.000000  0.954464  1
+    312  1.000000  0.956250  1
+    313  1.000000  0.958036  1
+    314  1.000000  0.959821  1
+    315  1.000000  0.961607  1
+    316  1.000000  0.963393  1
+    317  1.000000  0.965179  1
+    318  1.000000  0.966964  1
+    319  1.000000  1.000000  1
+
+    [320 rows x 3 columns]
+
+    """
+
+    if names is None:
+        names = data[modality_column].unique()
+
+    # FIXME
+    # Actually we should:
+    #   o filter the DataFrame so that the modality_colum only
+    #     contains elements supplied in the names array
+    #   o then check if all names are can actually be found in
+    #     that column
+    #   o only if that fails, raise the 'Could not find specified data'
+    #     error.
+    #
+    # Right now, the user cannot use this function if it is supposed to
+    # operate only on a subset of the data.
+    #
+    # When implementing this, also check whether the data object needs to
+    # be copied first -- we don't want to cause side-effects!
+
+    # Check if all values in 'names' are existing in
+    # data[modality_column'].
+    if not data[modality_column].isin(names).all():
+        raise AssertionError('Could not find specified data.')
+
+    rts = [data.loc[data[modality_column] == modality, rt_column]
+           for modality in names]
+
+    result = gen_cdfs_from_list(rts, names=names)
+    return result[names]
 
 
 def gen_percentiles(n=10):
