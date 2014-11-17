@@ -282,15 +282,25 @@ def gen_cdfs_from_list(data, t_max=None, names=None,
         raise ValueError('Please supply a name parameter with the same'
                          'number of elements as your data list.')
 
-    results = pd.DataFrame([gen_cdf(x, t_max=t_max) for x in data]).T
+    # Contruct the CDFs and assign the correct names to the Series
+    # objects. The names will serve as column names of the DataFrame
+    # if `return_type='dataframe'`.
+    cdfs = [gen_cdf(x, t_max=t_max) for x in data]
     if names is not None:
-        results.columns = names
+        for i, cdf in enumerate(cdfs):
+            cdfs[i].name = names[i]
+
+    if return_type == 'dataframe':
+        results = pd.DataFrame(cdfs).T
+    elif return_type == 'list':
+        results = cdfs
 
     return results
 
 
 def gen_cdfs_from_dataframe(data, rt_column='RT',
                             modality_column='Modality',
+                            group_by=None,
                             names=None):
     """
     Create cumulative distribution functions (CDFs) for response time data.
@@ -414,8 +424,6 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
 
     """
 
-    if names is None:
-        names = data[modality_column].unique()
 
     # FIXME
     # Actually we should:
@@ -434,6 +442,17 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
 
     # Check if all values in 'names' are existing in
     # data[modality_column'].
+
+    # if group_by is None:
+    #     return gen_cdf(data[rt_column])
+    # else:
+    #     rt_max = data[rt_column].max()
+    #     return data.groupby(group_by, as_index=False).apply(
+    #         lambda x: pd.DataFrame(gen_cdf(x['RT'], t_max=rt_max)))
+
+    if names is None:
+        names = data[modality_column].sort(inplace=False).unique()
+
     if not data[modality_column].isin(names).all():
         raise AssertionError('Could not find specified data.')
 
