@@ -300,7 +300,6 @@ def gen_cdfs_from_list(data, t_max=None, names=None,
 
 def gen_cdfs_from_dataframe(data, rt_column='RT',
                             modality_column='Modality',
-                            group_by=None,
                             names=None):
     """
     Create cumulative distribution functions (CDFs) for response time data.
@@ -456,11 +455,12 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
     if not data[modality_column].isin(names).all():
         raise AssertionError('Could not find specified data.')
 
+    # We construct a list of lists of RTs (one for each modality).
     rts = [data.loc[data[modality_column] == modality, rt_column]
            for modality in names]
 
-    result = gen_cdfs_from_list(rts, names=names)
-    return result[names]
+    result = gen_cdfs_from_list(rts, names=names, return_type='dataframe')
+    return result
 
 
 def gen_percentiles(n=10):
