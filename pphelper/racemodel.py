@@ -102,7 +102,7 @@ def gen_cdf(rts, t_max=None):
     # Convert input data to a Series, and round to 1 ms
     rts = pd.Series(rts).round().astype('int')
 
-    if any(rts < 0):
+    if rts.loc[rts < 0].any():
         rts = rts[rts >= 0]
         warnings.warn('At least one supplied response time was '
                       'less than zero and removed before '
@@ -276,7 +276,7 @@ def gen_cdfs_from_list(data, t_max=None, names=None,
         t_max = utils.get_max_from_list(data)
 
     if (names is not None) and (len(data) != len(names)):
-        raise ValueError('Please supply a name parameter with the same'
+        raise ValueError('Please supply a name parameter with the same '
                          'number of elements as your data list.')
 
     # Contruct the CDFs and assign the correct names to the Series
@@ -297,7 +297,6 @@ def gen_cdfs_from_list(data, t_max=None, names=None,
 
 def gen_cdfs_from_dataframe(data, rt_column='RT',
                             modality_column='Modality',
-                            group_by=None,
                             names=None):
     """
     Create cumulative distribution functions (CDFs) for response time data.
@@ -420,33 +419,6 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
     [320 rows x 3 columns]
 
     """
-
-
-    # FIXME
-    # Actually we should:
-    #   o filter the DataFrame so that the modality_colum only
-    #     contains elements supplied in the names array
-    #   o then check if all names are can actually be found in
-    #     that column
-    #   o only if that fails, raise the 'Could not find specified data'
-    #     error.
-    #
-    # Right now, the user cannot use this function if it is supposed to
-    # operate only on a subset of the data.
-    #
-    # When implementing this, also check whether the data object needs to
-    # be copied first -- we don't want to cause side-effects!
-
-    # Check if all values in 'names' are existing in
-    # data[modality_column'].
-
-    # if group_by is None:
-    #     return gen_cdf(data[rt_column])
-    # else:
-    #     rt_max = data[rt_column].max()
-    #     return data.groupby(group_by, as_index=False).apply(
-    #         lambda x: pd.DataFrame(gen_cdf(x['RT'], t_max=rt_max)))
-
     if names is None:
         names = data[modality_column].sort(inplace=False).unique()
 
