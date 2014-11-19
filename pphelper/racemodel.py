@@ -16,14 +16,12 @@ Provides
  - ``gen_percentiles`` : Calculate equally spaced percentiles values.
  - ``get_percentiles_from_cdf`` : Get the values (response times) of a cumulative distribution function at the specified percentiles.
  - ``gen_step_fun`` : Generate a step function from a set of observed response times.
- - ``ttest`` : Perform statistical tests.
 
 """
 
 from __future__ import division, unicode_literals
 import pandas as pd
 import numpy as np
-from scipy.stats import ttest_rel, wilcoxon
 import warnings
 from . import utils
 
@@ -619,74 +617,6 @@ def gen_step_fun(rts):
     p = np.arange(1, len(rts_sorted)+1) / len(rts_sorted)
 
     return pd.Series(rts_sorted, pd.Index(p, name='p'))
-
-
-def ttest(data, left='A', right='B', group_by=None, test_type='t-test'):
-    """
-    Parameters
-    ----------
-    data : DataFrame
-        The input data.
-    left : string
-        The name of the column to use as the 'left' side of the test.
-    right : string
-        The name of the column to use as the 'right' side of the test.
-    group_by : string or list of strings, optional
-        The names of index or data columns to split the data by before
-        running the statistical tests.
-        If ``None``, the data will not be split before testing.
-    test_type : string, optional
-        The statistical test to perform. Currently, valid values are
-        ``t-test`` for a pairwise t-test, and ``wilcoxon`` for a Wilcoxon
-        signed-rank test.
-
-    Returns
-    -------
-    results : Series or DataFrame
-        A DataFrame containing the test statistic and ``p`` value for
-        every percentile.
-
-    Raises
-    ------
-    TypeError
-        If the supplied test type is not supported.
-    IndexError
-        If the columns to compare could not be found in the supplied
-        DataFrame.
-
-    Notes
-    -----
-    A positive test statistic indicates that the 'left' mean is greater
-    than the right mean, and vice versa.
-
-    """
-
-    test_types = ['t-test', 'wilcoxon']
-    if test_type not in test_types:
-        raise TypeError('Please specify a valid test: '
-                        't-test, wilcoxon.')
-
-    if (left not in data.columns) or (right not in data.columns):
-        raise IndexError('The columns specified for comparison could'
-                         'not be found.')
-
-    if test_type == 't-test':
-        test_fun = ttest_rel
-    elif test_type == 'wilcoxon':
-        test_fun = wilcoxon
-
-    if group_by is None:
-        statistic, p = test_fun(data[left], data[right])
-        results = pd.Series([statistic, p],
-                            index=pd.Index(['statistic', 'p-value']))
-    else:
-        results = data.reset_index().groupby(group_by).apply(
-            lambda x: pd.Series(test_fun(x[left], x[right]),
-                                index=pd.Index(['statistic',
-                                                'p-value']))
-        )
-
-    return results
 
 
 def sum_cdfs(cdfs):
