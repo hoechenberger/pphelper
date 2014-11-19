@@ -7,20 +7,11 @@ Unit and (sort-of) integration tests for ``pphelper``.
 from __future__ import division
 import numpy as np
 import pandas as pd
-import os
-import tempfile
-
-import matplotlib
-# Switch to the non-interactive backend.
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.testing.compare import compare_images
 
 from pphelper.racemodel import gen_step_fun, gen_cdf,\
                                gen_percentiles, get_percentiles_from_cdf,\
-                               plot_cdfs, \
                                gen_cdfs_from_list, sum_cdfs, \
-                               ttest, gen_cdfs_from_dataframe
+                               gen_cdfs_from_dataframe
 
 
 def test_gen_step_fun_ordered():
@@ -1042,107 +1033,6 @@ def test_gen_cdfs_from_list_return_list():
     for i in range(len(data)):
         assert np.allclose(result[i], result_expected[i])
         assert result[i].index.equals(result_expected[i].index)
-
-
-def test_plot_cdfs_save():
-    # Larger fonts in plots
-    matplotlib.rcParams.update({'font.size': 22})
-
-    temp_dir = tempfile.gettempdir()
-    outfile_expected = os.path.join(temp_dir, 'pphelper-test_plot_cdfs.png')
-    outfile = os.path.join(temp_dir, 'pphelper-plot_cdfs.png')
-
-    p = np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95])
-
-    data = pd.DataFrame({'A': np.array([244.,     249.,     257.,     260.,     264.,
-                                        268.,     271.,     274.,     277.,  290.125]),
-                         'V': np.array([245.3,  247.8,  250.5,  252.1,  253.7,
-                                        256.2,  262.6,  272.,   282.2,  308.5]),
-                         'AV': np.array([234.6,         238.6,         240.375,       242.325,      244.13333333,
-                                         248.9,         253.85,        256.75,        265.05,        278.5       ]),
-                         'A+V': np.array([244.,          245.59090909,  247.29268293,  249.28571429,  250.91666667,
-                                          252.25,        253.58333333,  254.91666667,  257.76595745,  259.80851064])},
-                        index=pd.Index(p, name='p'))
-
-    # Order columns.
-    data = data[['A', 'V', 'AV', 'A+V']]
-
-    colors = {'A': '#7fc97f',
-              'V': '#beaed4',
-              'AV': '#fdc086',
-              'A+V': '#686665'}
-
-    plt.figure(figsize=[12, 8])
-    plt.hold(True)
-    for modality in data.columns:
-        plt.plot(data[modality], data.index, '--o', label=modality,
-                 color=colors[modality], linewidth=3, markersize=10,
-                 alpha=0.7)
-
-    plt.yticks(data.index)
-    plt.grid(True)
-    plt.title('Response Time Distributions', weight='bold')
-    plt.xlabel('RT', weight='bold')
-    plt.ylabel('Proportion of Responses', weight='bold')
-    plt.legend(loc='lower right')
-    plt.tight_layout()
-    plt.savefig(outfile_expected)
-
-    plot_cdfs(data, colors=colors, outfile=outfile)
-
-    # `result` will be non-empty if the comparison fails.
-    result = compare_images(outfile_expected, outfile, 0.001)
-    assert not result
-
-
-def test_ttest_without_grouping():
-    np.random.seed(123456)
-    index = pd.MultiIndex.from_product([['001', '002', '003'],
-                                        [0.1, 0.3, 0.5, 0.7, 0.9]],
-                                       names=['Participant', 'p'])
-
-    data = pd.DataFrame(index=index)
-    data['A'] = pd.Series(np.random.random_sample(3*5), index=index)
-    data['B'] = pd.Series(2.5 * np.random.random_sample(3*5), index=index)
-
-    result = ttest(data, left='A', right='B', test_type='wilcoxon')
-
-    result_expected = pd.Series(np.array([18.0, 0.017058718531494516]),
-                                index=pd.Index(['statistic', 'p-value']))
-
-    assert result.equals(result_expected)
-    assert result.index.equals(result_expected.index)
-
-
-def test_ttest_with_grouping():
-    np.random.seed(123456)
-    index = pd.MultiIndex.from_product([['001', '002', '003', '004',
-                                         '005', '006', '007', '008',
-                                         '009', '010', '011', '012'],
-                                        [0.1, 0.3, 0.5, 0.7, 0.9]],
-                                       names=['Participant', 'p'])
-
-    data = pd.DataFrame(index=index)
-    data['A'] = pd.Series(np.random.random_sample(12*5), index=index)
-    data['B'] = pd.Series(2.5 * np.random.random_sample(12*5), index=index)
-
-    result = ttest(data, left='A', right='B', group_by='p',
-                   test_type='wilcoxon')
-
-    result_expected = pd.DataFrame(
-        {'statistic': np.array([13.0, 8.0, 4.0, 13.0, 10.0]),
-         'p-value': np.array([0.0413894040091, 0.0150223385531,
-                              0.00603955904866, 0.0413894040091,
-                              0.0229090993544])},
-        index=data.index.levels[data.index.names.index('p')])
-    result_expected = result_expected[['statistic', 'p-value']]
-
-    # We compare each column individually (and the p-value column
-    # using np.allclose()) because apparently Pandas's
-    # DataFrame.equals() is too sensitive for even small deviations.
-    assert result['statistic'].equals(result_expected['statistic'])
-    assert np.allclose(result['p-value'], result_expected['p-value'])
-    assert result.index.equals(result_expected.index)
 
 
 def test_sum_cdfs():
