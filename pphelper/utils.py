@@ -9,8 +9,8 @@ datasets.
 
 Provides
 --------
- - ``add_zero_padding`` : Converts numbers (typically participant IDs) to strings of specific length, with leading zeros where necessary.
-
+ - ``add_zero_padding`` : Convert numbers (typically participant IDs) to strings of specific length, with leading zeros where necessary.
+ - ``get_max_from_list`` : Return the maximum value from a list or a list of lists.
 """
 
 from __future__ import unicode_literals

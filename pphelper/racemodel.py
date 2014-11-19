@@ -12,7 +12,7 @@ pp. 291-302.
 Provides
 --------
  - ``gen_cdf`` : Estimate the cumulative distribution function from response time data.
- - ``gen_cdfs_from_list`` : Convenience function: Applys `gen_cdf` to a list of data sets.
+ - ``gen_cdfs_from_list`` : Convenience function: Applys ``gen_cdf`` to a list of data sets.
  - ``gen_percentiles`` : Calculate equally spaced percentiles values.
  - ``get_percentiles_from_cdf`` : Get the values (response times) of a cumulative distribution function at the specified percentiles.
  - ``gen_step_fun`` : Generate a step function from a set of observed response times.
@@ -169,7 +169,7 @@ def gen_cdfs_from_list(data, t_max=None, names=None,
     """
     Estimate the empirical CDFs for a list of arrays.
 
-    The is a convenience function that wraps `gen_cdf`.
+    The is a convenience function that wraps ``gen_cdf``.
 
     Parameters
     ----------
@@ -198,7 +198,7 @@ def gen_cdfs_from_list(data, t_max=None, names=None,
 
     See Also
     --------
-    `gen_cdf`, `gen_step_fun`
+    gen_cdf, gen_step_fun
 
     Examples
     --------
@@ -334,7 +334,7 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
 
     See Also
     --------
-    `gen_cdf`, `gen_cdfs_from_list`
+    gen_cdf, gen_cdfs_from_list
 
     Notes
     -----
@@ -602,7 +602,7 @@ def gen_step_fun(rts):
 
     See Also
     --------
-    `gen_cdf`, `gen_cdfs_from_list`
+    gen_cdf, gen_cdfs_from_list
 
     Examples
     --------
@@ -659,7 +659,7 @@ def plot_cdfs(data, percentile_index='p', colors=None, outfile=None):
 
     See also
     --------
-    `get_percentiles_from_cdf`
+    get_percentiles_from_cdf
 
     Notes
     -----
