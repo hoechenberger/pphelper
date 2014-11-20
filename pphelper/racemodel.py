@@ -599,17 +599,21 @@ def sum_cdfs(cdfs):
     Parameters
     ----------
     cdfs : list
-        A list of array_like objects representing the CDFs to sum up.
+        A list of CDFs generated with ``gen_cdf``, ``gen_cdfs_from_list``,
+        or ``gen_cdfs_from_dataframe``.
 
     Returns
     -------
-    ndarray
-        The sum of the CDFs in the interval [0, 1].
+    Series
+        The sum of the CDFs in the interval [0, 1], indexed by the time in
+        milliseconds.
 
     Raises
     ------
     ValueError
         If the supplied CDFs have unequal lengths.
+    IndexError
+        If the indices of the supplied CDF Series objects do not match.
 
     Notes
     -----
@@ -623,69 +627,48 @@ def sum_cdfs(cdfs):
     >>> RTs = [np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280]), np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291])]
     >>> cdfs = gen_cdfs_from_list(RTs, names=['A', 'B'])
     >>> sum_cdfs([cdfs['A'], cdfs['B']])
-    array([ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
-            0.        ,  0.        ,  0.        ,  0.        ,  0.03846154,
-            0.05769231,  0.07692308,  0.09615385,  0.11538462,  0.17307692,
-            0.23076923,  0.28205128,  0.33333333,  0.38461538,  0.49230769,
-            0.57      ,  0.60282051,  0.63564103,  0.66846154,  0.70128205,
-            0.72660256,  0.75192308,  0.7900641 ,  0.82820513,  0.86634615,
-            0.91730769,  0.96826923,  1.        ,  1.        ,  1.        ,
-            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-            1.        ,  1.        ,  1.        ,  1.        ,  1.        ,
-            1.        ,  1.        ])
+    t
+    0     0
+    1     0
+    2     0
+    3     0
+    4     0
+    5     0
+    6     0
+    7     0
+    8     0
+    9     0
+    10    0
+    11    0
+    12    0
+    13    0
+    14    0
+    ...
+    277    1
+    278    1
+    279    1
+    280    1
+    281    1
+    282    1
+    283    1
+    284    1
+    285    1
+    286    1
+    287    1
+    288    1
+    289    1
+    290    1
+    291    1
+    Length: 292, dtype: float64
 
     """
     cdf_lengths_equal = all([cdf.shape == cdfs[0].shape for cdf in cdfs])
     if not cdf_lengths_equal:
         raise ValueError('Please supply CDFs with equal lengths.')
 
-    return np.minimum(np.sum(cdfs, axis=0), 1)
+    cdf_indices_equal = all([cdfs[0].index.equals(cdf.index)
+                             for cdf in cdfs])
+    if not cdf_indices_equal:
+        raise IndexError('Please supply CDFs with equal indices.')
+
+    return np.minimum(pd.DataFrame(cdfs).T.sum(axis=1), 1)
