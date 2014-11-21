@@ -471,10 +471,7 @@ def gen_percentiles(n=10):
     except TypeError:
         raise TypeError('Please supply an integer to gen_percentiles().')
 
-    p = np.zeros(n)
-    for i in range(1, n+1):
-        p[i-1] = (i-0.5) / n
-
+    p = np.linspace(0.5 * 1/n, 1 - 0.5*1/n, n)
     return p
 
 
