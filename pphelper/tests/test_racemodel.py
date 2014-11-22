@@ -51,9 +51,11 @@ def test_gen_step_fun_with_ties():
     Ordered RTs with ties
     """
     rts = np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])
-    n = np.unique(rts).shape[0]
+    n = len(rts)
 
-    expected_p = np.arange(1, n+1) / n
+    # max-ranking
+    expected_p = [1/n, 2/n, 4/n, 6/n, 7/n, 8/n, 9/n, 10/n, 11/n, 12/n,
+                  13/n]
     expected_rts = np.unique(rts)
     expected = pd.Series(expected_rts, pd.Index(expected_p, name='p'))
 

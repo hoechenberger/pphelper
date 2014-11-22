@@ -23,6 +23,7 @@ from __future__ import division, unicode_literals
 import pandas as pd
 import numpy as np
 import warnings
+from scipy.stats import rankdata
 from . import utils
 
 
@@ -581,12 +582,11 @@ def gen_step_fun(rts):
     >>> plt.step(sf, sf.index, where='post'); plt.show()
 
     """
+    rts_unique = np.unique(rts)
+    rts_sorted = np.sort(rts)
+    p = np.unique(rankdata(rts_sorted, method='max')) / len(rts_sorted)
 
-    # Drop duplicate values and sort in ascending order
-    rts_sorted = np.unique(rts)
-    p = np.arange(1, len(rts_sorted)+1) / len(rts_sorted)
-
-    return pd.Series(rts_sorted, pd.Index(p, name='p'))
+    return pd.Series(rts_unique, pd.Index(p, name='p'))
 
 
 def sum_cdfs(cdfs):
