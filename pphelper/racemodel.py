@@ -23,6 +23,8 @@ from __future__ import division, unicode_literals
 import pandas as pd
 import numpy as np
 import warnings
+from scipy.stats import rankdata
+from scipy.interpolate import interp1d
 from . import utils
 
 
@@ -53,7 +55,8 @@ def gen_cdf(rts, t_max=None):
     Notes
     -----
     Response times will be rounded to 1 millisecond.
-    The algorithm is described in Ulrich, Miller, and Schröter (2007):
+    The algorithm is heavily adapted from the one described by Ulrich,
+    Miller, and Schröter (2007):
     'Testing the race model inequality: An algorithm and computer
     programs', published in Behavior Research Methods 39 (2), pp. 291-302.
 
@@ -113,52 +116,45 @@ def gen_cdf(rts, t_max=None):
     else:
         t_max = int(round(t_max))
 
-    # The variable names correspond to following variables
-    # in the paper:
-    #
-    # C == rts
-    # n == n
-    # k == n_unique
-    # N == rt_count
-    # s == rt_cumsum
-
-    rts_sorted = rts.order()
-    rts_unique = rts_sorted.unique()
-
-    n = rts_sorted.size
-    n_unique = rts_unique.size
-
-    # Number of occurrences of each element.
-    rt_count = rts_sorted.value_counts().sort_index()
-    rt_cumsum = rt_count.cumsum()
-
-    # Add leading 0 element because our algorithm
-    # starts iteration at index 1.
-    # This is done to maintain close similarity to the published algorithm.
-    rts_unique = np.append(0, rts_unique)
-    rt_cumsum = np.append(0, rt_cumsum)
-    rt_count = np.append(0, rt_count)
-
-    result = np.zeros(t_max+1)
     timeline = np.arange(t_max+1)
-    i = 1
 
-    for t in timeline:
-        if t < rts_unique[1]:
-            result[t] = 0
-        elif t >= rts_unique[-1]:
-            result[t] = 1
-        elif i < n_unique:
-            result[t] = 1/n * \
-                (rt_cumsum[i-1] + rt_count[i]/2 +
-                 (rt_count[i] + rt_count[i+1]) / 2 *
-                 (t - rts_unique[i]) /
-                 (rts_unique[i+1] - rts_unique[i]))
+    # We first sort the RTs from smallest to largest, rank them
+    # with the 'maximum' method (i.e. in the case of ties, all ties
+    # will receive the highest possible rank), select all unique ranks,
+    # and use these to calculate the percentile steps of the CDF
+    # before interpolation.
+    rts_sorted = rts.order()
+    p = np.unique(rankdata(rts_sorted, method='max')) / len(rts_sorted)
 
-            if t+1 == rts_unique[i+1]:
-                i += 1
+    # rts_unique shall be our plotting positions.
+    rts_unique = rts_sorted.unique()
+    rt_min = rts_unique.min()
+    rt_max = rts_unique.max()
 
-    return pd.Series(result, index=pd.Index(timeline, name='t'))
+    # We now calculate the midpoints of the vertical (i.e. percentile)
+    # steps.
+    #
+    # The very first midpoint is treated speacially because to make the
+    # following for loop easier to read.
+    p_mid = np.empty(rts_unique.shape)
+    p_mid[0] = 1/2 * p[0]
+
+    for i in range(len(rts_unique) - 1):
+        dp = p[i+1] - p[i]
+        p_mid[i+1] = p[i] + 1/2 * dp
+
+    # Finally construct the CDF.
+    # All values < min(rts) shall be 0,
+    # all values >= max(rts) shall be 1,
+    # and all values in-between shall be stepwise linearly interpolated.
+    cdf = np.empty(t_max+1)
+    cdf[:rt_min] = 0
+    cdf[rt_max:t_max+1] = 1
+    cdf[rt_min:rt_max] = interp1d(
+        rts_unique, p_mid, bounds_error=False)(range(rt_min,
+                                                     rt_max)
+    )
+    return pd.Series(cdf, index=pd.Index(timeline, name='t'))
 
 
 def gen_cdfs_from_list(data, t_max=None, names=None,
@@ -471,10 +467,7 @@ def gen_percentiles(n=10):
     except TypeError:
         raise TypeError('Please supply an integer to gen_percentiles().')
 
-    p = np.zeros(n)
-    for i in range(1, n+1):
-        p[i-1] = (i-0.5) / n
-
+    p = np.linspace(0.5 * 1/n, 1 - 0.5*1/n, n)
     return p
 
 
@@ -584,12 +577,11 @@ def gen_step_fun(rts):
     >>> plt.step(sf, sf.index, where='post'); plt.show()
 
     """
+    rts_unique = np.unique(rts)
+    rts_sorted = np.sort(rts)
+    p = np.unique(rankdata(rts_sorted, method='max')) / len(rts_sorted)
 
-    # Drop duplicate values and sort in ascending order
-    rts_sorted = np.unique(rts)
-    p = np.arange(1, len(rts_sorted)+1) / len(rts_sorted)
-
-    return pd.Series(rts_sorted, pd.Index(p, name='p'))
+    return pd.Series(rts_unique, pd.Index(p, name='p'))
 
 
 def sum_cdfs(cdfs):
