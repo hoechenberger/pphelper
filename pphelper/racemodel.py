@@ -128,6 +128,8 @@ def gen_cdf(rts, t_max=None):
 
     # rts_unique shall be our plotting positions.
     rts_unique = rts_sorted.unique()
+    rt_min = rts_unique.min()
+    rt_max = rts_unique.max()
 
     # We now calculate the midpoints of the vertical (i.e. percentile)
     # steps.
@@ -146,11 +148,11 @@ def gen_cdf(rts, t_max=None):
     # all values >= max(rts) shall be 1,
     # and all values in-between shall be stepwise linearly interpolated.
     cdf = np.empty(t_max+1)
-    cdf[:min(rts_unique)] = 0
-    cdf[max(rts_unique):t_max+1] = 1
-    cdf[min(rts_unique):max(rts_unique)] = interp1d(
-        rts_unique, p_mid, bounds_error=False)(range(rts_unique.min(),
-                                                     rts_unique.max())
+    cdf[:rt_min] = 0
+    cdf[rt_max:t_max+1] = 1
+    cdf[rt_min:rt_max] = interp1d(
+        rts_unique, p_mid, bounds_error=False)(range(rt_min,
+                                                     rt_max)
     )
     return pd.Series(cdf, index=pd.Index(timeline, name='t'))
 
