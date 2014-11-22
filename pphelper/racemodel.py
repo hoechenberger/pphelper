@@ -151,7 +151,7 @@ def gen_cdf(rts, t_max=None):
     cdf = np.empty(t_max+1)
     cdf[:rt_min] = 0
     cdf[rt_max:] = 1
-    cdf[rt_min:rt_max] = interpolate(range(rt_min, rt_max))
+    cdf[rt_min:rt_max] = interpolate(np.arange(rt_min, rt_max))
 
     return pd.Series(cdf, index=pd.Index(timeline, name='t'))
 
