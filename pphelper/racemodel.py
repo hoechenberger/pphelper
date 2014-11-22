@@ -121,21 +121,20 @@ def gen_cdf(rts, t_max=None):
     # We first sort the RTs from smallest to largest, rank them
     # with the 'maximum' method (i.e. in the case of ties, all ties
     # will receive the highest possible rank), select all unique ranks,
-    # and use these to calculate the percentile steps of the CDF
-    # before interpolation.
+    # and use these to calculate the plotting positions.
     rts_sorted = rts.order()
     p = np.unique(rankdata(rts_sorted, method='max')) / len(rts_sorted)
 
-    # rts_unique shall be our plotting positions.
+    # rts_unique are the x values corresponding to our plotting positions.
     rts_unique = rts_sorted.unique()
     rt_min = rts_unique.min()
     rt_max = rts_unique.max()
 
-    # We now calculate the midpoints of the vertical (i.e. percentile)
-    # steps.
+    # We now calculate the midpoints of the initial plotting positions
+    # to use as _new_ plotting positions.
     #
-    # The very first midpoint is treated speacially because to make the
-    # following for loop easier to read.
+    # The very first midpoint is treated specially to make the following
+    # for loop easier to read.
     p_mid = np.empty(rts_unique.shape)
     p_mid[0] = 1/2 * p[0]
 
@@ -147,13 +146,13 @@ def gen_cdf(rts, t_max=None):
     # All values < min(rts) shall be 0,
     # all values >= max(rts) shall be 1,
     # and all values in-between shall be stepwise linearly interpolated.
+    interpolate = interp1d(rts_unique, p_mid, bounds_error=False)
+
     cdf = np.empty(t_max+1)
     cdf[:rt_min] = 0
-    cdf[rt_max:t_max+1] = 1
-    cdf[rt_min:rt_max] = interp1d(
-        rts_unique, p_mid, bounds_error=False)(range(rt_min,
-                                                     rt_max)
-    )
+    cdf[rt_max:] = 1
+    cdf[rt_min:rt_max] = interpolate(np.arange(rt_min, rt_max))
+
     return pd.Series(cdf, index=pd.Index(timeline, name='t'))
 
 
