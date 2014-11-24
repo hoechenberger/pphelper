@@ -2,7 +2,7 @@
 Changelog
 =========
 ****************
-v0.5, 2014-11-24
+v0.4, 2014-11-24
 ****************
 - ``compare_*`` functions renamed to ``gen_*``.
 - ``get_cdf*`` functions renamed to ``get_percentiles*``.
