@@ -2,7 +2,13 @@
 Changelog
 =========
 ****************
-v0.6, 2015-xx-xx
+v0.7, 2015-xx-xx
+****************
+- Add ``utils.bootstrap_ci`` for simple bootstrapping of
+  confidence intervals.
+
+****************
+v0.6, 2015-09-01
 ****************
 - Replace `onset_delay` parameter of `hardware` components with
   `trigger_time`.

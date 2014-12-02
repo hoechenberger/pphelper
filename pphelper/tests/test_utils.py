@@ -3,8 +3,8 @@
 from __future__ import unicode_literals
 import numpy as np
 import pandas as pd
-from pphelper.utils import add_zero_padding, get_max_from_list
-
+from pphelper.utils import (add_zero_padding, get_max_from_list,
+                            bootstrap_ci)
 
 def test_add_zero_padding_no_args():
     participants = range(1, 6)
@@ -46,6 +46,22 @@ def test_get_max_from_list():
     result = get_max_from_list(data)
 
     assert result == result_expected
+
+
+def test_bootstrap():
+    np.random.seed(12345)
+    data = np.concatenate(
+        [np.random.normal(3, 1, 100),
+         np.random.normal(6, 2, 200)]
+    )
+
+    ci_low_expected, ci_high_expected = 4.6, 5.1
+    ci_low, ci_high = bootstrap_ci(
+        data, n_samples=100000, alpha=0.05
+    )
+
+    assert np.round(ci_low, decimals=1) == ci_low_expected
+    assert np.round(ci_high, decimals=1) == ci_high_expected
 
 
 if __name__ == '__main__':

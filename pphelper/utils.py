@@ -15,6 +15,7 @@ import sys
 import pandas as pd
 import itertools
 import numpy as np
+from collections import namedtuple
 
 
 def add_zero_padding(data, length=3, return_series=True):
@@ -74,3 +75,46 @@ def get_max_from_list(x):
 
     """
     return np.array(list(itertools.chain.from_iterable(x))).max()
+
+
+def bootstrap_ci(data, stat_fun=np.mean, n_samples=2000, alpha=0.05):
+    """
+    Return bootstrap estimate of ``100 * (1-alpha)`` confidence intervals
+    (CIs) for the statistic calculated by stat_fun().
+
+    Parameters
+    ----------
+    data : array_like
+        The input data.
+    stat_fun : function, optional
+        The function to use for calculating the statistics.
+        Defaults to ``np.mean``.
+    n_samples : int, optional
+        The number of samples to draw with replacement.
+    alpha : float, optional
+        The alpha level used to calculate the CIs.
+
+    Returns
+    -------
+    result : namedtuple
+        The lower and upper bounds of the confidence interval.
+
+    Notes
+    -----
+    Adapted from http://people.duke.edu/~ccc14/pcfb/analysis.html
+    © Copyright 2012, Cliburn Chan.
+
+    """
+    data = np.array(data)
+    n = len(data)
+    idx = np.random.randint(0, n, (n_samples, n))
+    samples = data[idx]
+    stat = np.sort(stat_fun(samples, 1))
+
+    confidence_interval = namedtuple('CI', 'lower upper')
+    result = confidence_interval(
+        lower=stat[int((alpha/2) * n_samples)],
+        upper=stat[int((1 - alpha/2) * n_samples)]
+    )
+
+    return result
