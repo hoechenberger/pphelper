@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-pphelper.utils
-==================
-
 Some functions that come in handy when working with psychophysics
 datasets.
 

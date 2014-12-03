@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-pphelper.racemodel
-==================
-
 Race model inequality analysis implementation, based on Ulrich, Miller,
 and Schröter (2007): 'Testing the race model inequality: An algorithm
 and computer programs', published in Behavior Research Methods 39 (2),
@@ -50,7 +47,8 @@ def gen_cdf(rts, t_max=None):
 
     See Also
     --------
-    get_percentiles_from_cdf
+    gen_cdfs_from_dataframe, gen_cdfs_from_list, get_percentiles_from_cdf,
+    gen_step_fun
 
     Notes
     -----
@@ -190,7 +188,8 @@ def gen_cdfs_from_list(data, t_max=None, names=None,
 
     See Also
     --------
-    gen_cdf, gen_step_fun
+    gen_cdf, gen_cdfs_from_dataframe, get_percentiles_from_cdf,
+    gen_step_fun
 
     Examples
     --------
@@ -326,7 +325,7 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
 
     See Also
     --------
-    gen_cdf, gen_cdfs_from_list
+    gen_cdf, gen_cdfs_from_list, gen_step_fun, get_percentiles_from_cdf
 
     Notes
     -----
@@ -497,7 +496,7 @@ def get_percentiles_from_cdf(cdf, p):
 
     See Also
     --------
-    gen_cdf, gen_percentiles
+    gen_cdf, gen_cdfs_from_list, gen_cdfs_from_dataframe, gen_percentiles
 
     Examples
     --------
@@ -564,7 +563,7 @@ def gen_step_fun(rts):
 
     See Also
     --------
-    gen_cdf, gen_cdfs_from_list
+    gen_cdf, gen_cdfs_from_dataframe, gen_cdfs_from_list
 
     Examples
     --------
@@ -610,6 +609,10 @@ def sum_cdfs(cdfs):
     -----
     First calculates the sum of the CDFs, and returns the element-wise
     minima `min[(sum, 1)`.
+
+    See Also
+    --------
+    gen_cdf, gen_cdfs_from_dataframe, gen_cdfs_from_list
 
     Examples
     --------
