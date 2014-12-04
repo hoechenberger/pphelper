@@ -23,7 +23,8 @@ setup(
     description='Different helper modules for analysis of psychophysics '
                 'experiments.',
     long_description=open('README.rst').read(),
-    install_requires=['pandas >= 0.14.1', 'matplotlib', 'scipy',
+    install_requires=['sphinxcontrib-napoleon',
+                      'pandas >= 0.14.1', 'matplotlib', 'scipy',
                       'numpy >= 1.7.2'],
     classifiers=['Intended Audience :: Science/Research',
                  'Programming Language :: Python',
