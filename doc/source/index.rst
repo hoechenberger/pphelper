@@ -7,12 +7,11 @@ Welcome to pphelper's documentation!
 ====================================
 .. Contents:
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   modules
-
-.. automodule:: racemodel
-  :members:
-
+   about
+   racemodel
+   hardware
+   utils
 
 
