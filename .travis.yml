@@ -11,9 +11,9 @@ before_install:
   - sudo apt-get install libatlas-base-dev gfortran libfftw3-3 libfftw3-dev
 
 install:
-  - pip install -r requirements.txt
-  - easy_install "https://master-dl.sourceforge.net/project/psychpy/PsychoPy/PsychoPy-1.81.00-py2.7.egg"
-  - svn checkout http://pylibnidaqmx.googlecode.com/svn/trunk/ pylibnidaqmx && pip install ./pylibnidaqmx && rm -rf ./pylibnidaqmx
+  - pip -r requirements.txt
+  - pip install https://github.com/psychopy/psychopy/archive/1.80.06.zip
+  - pip install svn+http://pylibnidaqmx.googlecode.com/svn/trunk
   - pip install .
 
 script: py.test

@@ -2,4 +2,5 @@ numpy >= 1.7.2
 scipy
 matplotlib
 pandas >= 0.14.1
+pyfftw
 sphinxcontrib-napoleon
