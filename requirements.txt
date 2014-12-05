@@ -2,4 +2,7 @@ numpy >= 1.7.2
 scipy
 matplotlib
 pandas >= 0.14.1
+pyfftw
 sphinxcontrib-napoleon
+git+https://github.com/psychopy/psychopy.git@1.81.03#egg=psychopy
+svn+http://pylibnidaqmx.googlecode.com/svn/trunk

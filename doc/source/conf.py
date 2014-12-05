@@ -15,14 +15,34 @@
 import sys
 import os
 
+# Check if we are on Python 2 or 3, and import the mock module accordingly.
+# It is used to install C-dependent packages on readthedocs.org's
+# building server.
+
 # on_rtd is whether we are on readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-if not on_rtd:  # only import and set the theme if we're building docs locally
+if on_rtd:
+    if sys.version[0] == '3':  # Python 3
+        from unittest.mock import MagicMock
+    elif sys.version[0] == '2':  # Python 2
+        from mock import Mock as MagicMock
+    else:
+        raise ImportError("Don't know how to import MagicMock.")
+
+    class Mock(MagicMock):
+        @classmethod
+        def __getattr__(cls, name):
+                return Mock()
+
+    MOCK_MODULES = ['nidaqmx']
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+else:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-# otherwise, readthedocs.org uses their theme by default, so no need to specify it
+    # otherwise, readthedocs.org uses their theme by default, so no need to specify it
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
