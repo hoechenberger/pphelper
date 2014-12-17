@@ -387,8 +387,11 @@ class PID(object):
     Attributes
     ----------
     sampling_duration
-    sampling_rate
-    samples_to_acquire
+    sampling_rate : int
+        The sampling rate (in Hz) of the analog data acquisition.
+    samples_to_acquire : int
+        The number of samples to acquire in the acquisition. This is the
+        product of the sampling rate and the sampling duration.
 
     """
     def __init__(self, ni_input_line='Dev1/ai0',
@@ -418,7 +421,6 @@ class PID(object):
             Defaults to `PID`.
 
         """
-
         self._sampling_duration = sampling_duration
         self._sampling_rate = sampling_rate
         self._samples_to_acquire = self._sampling_rate * \
@@ -512,9 +514,6 @@ class PID(object):
 
     @property
     def sampling_rate(self):
-        """
-        The sampling rate (in Hz) of the analog data acquisition.
-        """
         return self._sampling_rate
 
     @sampling_rate.setter
@@ -537,11 +536,6 @@ class PID(object):
 
     @property
     def samples_to_acquire(self):
-        """
-        The number of samples to acquire in the acquisition.
-
-        This is the product of the sampling rate and the sampling duration.
-        """
         return self._samples_to_acquire
 
 
