@@ -6,7 +6,7 @@ from __future__ import division, unicode_literals
 
 import nidaqmx
 import numpy as np
-import socket
+import threading
 import psychopy.core
 
 
@@ -122,7 +122,7 @@ class _StimulationApparatus(object):
         #  stimulus_n, stimulus in enumerate(self._stimuli)
         #  if stimulus['name'] == name).next()
 
-    def stimulate(self):
+    def stimulate(self, **kwargs):
         raise NotImplementedError('stimulate() not implemented.')
 
     # Declare some properties with getters and setters for convenient
@@ -176,26 +176,28 @@ class _StimulationApparatus(object):
 
 class Olfactometer(_StimulationApparatus):
     """
-    Provide an interface to the ValveLink devices used to control
+    Provides an interface to the ValveLink devices used to control
     olfactometers.
-
-    Parameters
-    ----------
-    ni_lines : string, optional
-        The lines of the NI board to use as output channel.
-        Defaults to ``Dev1/line0:7``.
-    ni_trigger_line : string, optional
-        A line on which to generate an additional trigger pulse as the
-        olfactometer stimulation is initiated. This can be used to
-        start the recording of PID data, for example.
-    ni_task_name : string, optional
-        The name of the NI DAQ task to create.
-        Defaults to ``Olfactometer``.
 
     """
     def __init__(self, ni_lines='Dev1/port0/line0:7',
                  ni_trigger_line=None,
                  ni_task_name='Olfactometer'):
+        """
+        Parameters
+        ----------
+        ni_lines : string, optional
+            The lines of the NI board to use as output channel.
+            Defaults to ``Dev1/line0:7``.
+        ni_trigger_line : string, optional
+            A line on which to generate an additional trigger pulse as the
+            olfactometer stimulation is initiated. This can be used to
+            start the recording of PID data, for example.
+        ni_task_name : string, optional
+            The name of the NI DAQ task to create.
+            Defaults to ``Olfactometer``.
+
+        """
         super(Olfactometer, self).__init__()
         self._ni_task = nidaqmx.DigitalOutputTask(name=ni_task_name)
 
@@ -223,6 +225,8 @@ class Olfactometer(_StimulationApparatus):
 
         if not self._ni_task.start():
             raise IOError('Could not start digital output task.')
+
+        self._thread = None
 
     def __del__(self):
         self._ni_task.clear()
@@ -310,7 +314,9 @@ class Olfactometer(_StimulationApparatus):
                       np.repeat(0,
                                 self._ni_task_number_of_trigger_channels)]
 
-    def stimulate(self):
+        self._thread = threading.Thread(target=self._stimulate)
+
+    def stimulate(self, join_thread=False):
         """
         Start the stimulation with the currently selected stimulus.
 
@@ -318,12 +324,36 @@ class Olfactometer(_StimulationApparatus):
         the intended duration of the stimulus. After that, they will be
         switched to the offset state specified by the stimulus.
 
+        Parameters
+        ----------
+        join_thread : bool, optional
+            Specifies whether the stimulation thread should be `joined` or
+            not, i.e. whether we should wait for it to finish (blocking
+            other operations), or return immediately.
+            Defaults to `False`, i.e. non-blocking behavior.
+
         See Also
         --------
         add_stimulus
         select_stimulus
 
+        Notes
+        -----
+        The thread object created by ``select_stimulus`` is started when
+        ``stimulate`` is invoked. It has to be re-created by calling
+        ``select_stimulus`` before ``stimulate`` can be invoked again.
+
         """
+
+        self._thread.start()
+        if join_thread:
+            self._thread.join()
+
+        self._stimulus = None
+
+    def _stimulate(self):
+        # t0 = psychopy.core.getTime()
+
         if not self._stimulus_selected():
             raise ValueError('No stimulus selected. Please invoke '
                              '``select_stimulus()`` first.')
@@ -333,24 +363,61 @@ class Olfactometer(_StimulationApparatus):
         bitmask = self._stimulus['bitmask']
         bitmask_offset = self._stimulus['bitmask_offset']
 
-        if self._stimulus['onset_delay'] > 0:
+        if onset_delay > 0:
             psychopy.core.wait(onset_delay, hogCPUperiod=onset_delay)
+            # while psychopy.core.getTime() - t0 < onset_delay:
+            #     pass
 
         if self._ni_task.write(bitmask) <= 0:
             raise IOError('Could not write onset bitmask.')
 
+        # t0 = psychopy.core.getTime()
         psychopy.core.wait(duration, hogCPUperiod=duration)
+        # while psychopy.core.getTime() - t0 < duration + onset_delay:
+        #     pass
 
         if self._ni_task.write(bitmask_offset) <= 0:
             raise IOError('Could not write offset bitmask.')
 
 
 class PID(object):
+    """
+    Provides an interface to a photo-ionization detector.
+
+    Attributes
+    ----------
+    sampling_duration
+    sampling_rate
+    samples_to_acquire
+
+    """
     def __init__(self, ni_input_line='Dev1/ai0',
                  ni_trigger_line=None,
                  sampling_duration=3,
                  sampling_rate=2000,
                  ni_task_name='PID'):
+
+        """
+        Parameters
+        ----------
+        ni_input_line : str, optional
+            The analog input line to acquire the PID data from.
+            Defaults to `Dev1/ai0`.
+        ni_trigger_line : str, optional
+            If specified, start the acquisition only after a start trigger
+            (high voltage) on this line has been received.
+            If `None`, no external trigger is required.
+        sampling_duration : float, optional
+            How long to sample, specified in seconds.
+            Defaults to 3 seconds.
+        sampling_rate : int, optional
+            At which rate (in Hz) to sample the analog input signal.
+            Defaults to 2000 Hz.
+        ni_task_name : str, optional
+            The name of the NIDAQmx task to create.
+            Defaults to `PID`.
+
+        """
 
         self._sampling_duration = sampling_duration
         self._sampling_rate = sampling_rate
@@ -390,6 +457,14 @@ class PID(object):
         del self
 
     def get_data(self):
+        """
+        Return the acquired data.
+
+        If the acquisition is not finished by the time this method is
+        called, it will first wait until finished (blocking other
+        processing) and then return the data.
+
+        """
         # If we do not use an external trigger, start the data
         # acquisition immediately.
         if self._ni_task_number_of_trigger_channels == 0:
@@ -411,6 +486,10 @@ class PID(object):
 
     @property
     def sampling_duration(self):
+        """
+        The duration (in seconds) of data acquisition.
+
+        """
         return self._sampling_duration
 
     @sampling_duration.setter
@@ -433,6 +512,9 @@ class PID(object):
 
     @property
     def sampling_rate(self):
+        """
+        The sampling rate (in Hz) of the analog data acquisition.
+        """
         return self._sampling_rate
 
     @sampling_rate.setter
@@ -455,6 +537,11 @@ class PID(object):
 
     @property
     def samples_to_acquire(self):
+        """
+        The number of samples to acquire in the acquisition.
+
+        This is the product of the sampling rate and the sampling duration.
+        """
         return self._samples_to_acquire
 
 
