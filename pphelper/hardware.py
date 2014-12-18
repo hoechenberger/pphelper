@@ -352,19 +352,20 @@ class Olfactometer(_StimulationApparatus):
         self._stimulus = None
 
     def _stimulate(self):
-        # t0 = psychopy.core.getTime()
+        t0 = psychopy.core.getTime()
 
         if not self._stimulus_selected():
             raise ValueError('No stimulus selected. Please invoke '
                              '``select_stimulus()`` first.')
 
-        duration = self._stimulus['duration']
+        stimulus_duration = self._stimulus['duration']
         onset_delay = self._stimulus['onset_delay']
         bitmask = self._stimulus['bitmask']
         bitmask_offset = self._stimulus['bitmask_offset']
 
         if onset_delay > 0:
-            psychopy.core.wait(onset_delay, hogCPUperiod=onset_delay)
+            onset_wait = onset_delay - (psychopy.core.getTime() - t0)
+            psychopy.core.wait(onset_wait, hogCPUperiod=onset_wait)
             # while psychopy.core.getTime() - t0 < onset_delay:
             #     pass
 
@@ -372,7 +373,8 @@ class Olfactometer(_StimulationApparatus):
             raise IOError('Could not write onset bitmask.')
 
         # t0 = psychopy.core.getTime()
-        psychopy.core.wait(duration, hogCPUperiod=duration)
+        psychopy.core.wait(stimulus_duration,
+                           hogCPUperiod=stimulus_duration)
         # while psychopy.core.getTime() - t0 < duration + onset_delay:
         #     pass
 
