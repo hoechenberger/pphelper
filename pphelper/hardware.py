@@ -384,15 +384,6 @@ class PID(object):
     """
     Provides an interface to a photo-ionization detector.
 
-    Attributes
-    ----------
-    sampling_duration
-    sampling_rate : int
-        The sampling rate (in Hz) of the analog data acquisition.
-    samples_to_acquire : int
-        The number of samples to acquire in the acquisition. This is the
-        product of the sampling rate and the sampling duration.
-
     """
     def __init__(self, ni_input_line='Dev1/ai0',
                  ni_trigger_line=None,
@@ -514,6 +505,10 @@ class PID(object):
 
     @property
     def sampling_rate(self):
+        """
+        The sampling rate (in Hz) of the analog data acquisition.
+
+        """
         return self._sampling_rate
 
     @sampling_rate.setter
@@ -536,6 +531,11 @@ class PID(object):
 
     @property
     def samples_to_acquire(self):
+        """
+        The number of samples to acquire in the acquisition. This is the
+        product of the sampling rate and the sampling duration.
+
+        """
         return self._samples_to_acquire
 
 
