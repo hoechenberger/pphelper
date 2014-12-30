@@ -182,7 +182,8 @@ class Olfactometer(_StimulationApparatus):
     """
     def __init__(self, ni_lines='Dev1/port0/line0:7',
                  ni_trigger_line=None,
-                 ni_task_name='Olfactometer'):
+                 ni_task_name='Olfactometer',
+                 use_threads=True):
         """
         Parameters
         ----------
@@ -196,6 +197,11 @@ class Olfactometer(_StimulationApparatus):
         ni_task_name : string, optional
             The name of the NI DAQ task to create.
             Defaults to ``Olfactometer``.
+        use_threads : bool, optional
+            Whether a Python thread should be created when
+            `select_stimulus` is called. This thread would then allow
+            non-blocking stimulation.
+            Defaults to ``True``.
 
         """
         super(Olfactometer, self).__init__()
@@ -226,6 +232,7 @@ class Olfactometer(_StimulationApparatus):
         if not self._ni_task.start():
             raise IOError('Could not start digital output task.')
 
+        self._use_threads = use_threads
         self._thread = None
 
     def __del__(self):
@@ -314,9 +321,10 @@ class Olfactometer(_StimulationApparatus):
                       np.repeat(0,
                                 self._ni_task_number_of_trigger_channels)]
 
-        self._thread = threading.Thread(target=self._stimulate)
+        if self._use_threads:
+            self._thread = threading.Thread(target=self._stimulate)
 
-    def stimulate(self, join_thread=False):
+    def stimulate(self, blocking_wait=False):
         """
         Start the stimulation with the currently selected stimulus.
 
@@ -326,10 +334,11 @@ class Olfactometer(_StimulationApparatus):
 
         Parameters
         ----------
-        join_thread : bool, optional
+        blocking_wait : bool, optional
             Specifies whether the stimulation thread should be `joined` or
             not, i.e. whether we should wait for it to finish (blocking
-            other operations), or return immediately.
+            other operations), or return immediately. This parameter will
+            be ignored if threads are not used for stimulation.
             Defaults to `False`, i.e. non-blocking behavior.
 
         See Also
@@ -339,15 +348,18 @@ class Olfactometer(_StimulationApparatus):
 
         Notes
         -----
-        The thread object created by ``select_stimulus`` is started when
-        ``stimulate`` is invoked. It has to be re-created by calling
-        ``select_stimulus`` before ``stimulate`` can be invoked again.
+        When using thrads, the thread object created by
+        ``select_stimulus`` is started when ``stimulate`` is invoked. It
+        has to be re-created by calling ``select_stimulus`` before
+        ``stimulate`` can be invoked again.
 
         """
-
-        self._thread.start()
-        if join_thread:
-            self._thread.join()
+        if self._use_threads:
+            self._thread.start()
+            if blocking_wait:
+                self._thread.join()
+        else:
+            self._stimulate()
 
         self._stimulus = None
 
@@ -365,18 +377,13 @@ class Olfactometer(_StimulationApparatus):
 
         if onset_delay > 0:
             onset_wait = onset_delay - (psychopy.core.getTime() - t0)
-            psychopy.core.wait(onset_wait, hogCPUperiod=onset_wait)
-            # while psychopy.core.getTime() - t0 < onset_delay:
-            #     pass
+            psychopy.core.wait(onset_wait, hogCPUperiod=onset_wait/5)
 
         if self._ni_task.write(bitmask) <= 0:
             raise IOError('Could not write onset bitmask.')
 
-        # t0 = psychopy.core.getTime()
         psychopy.core.wait(stimulus_duration,
-                           hogCPUperiod=stimulus_duration)
-        # while psychopy.core.getTime() - t0 < duration + onset_delay:
-        #     pass
+                           hogCPUperiod=stimulus_duration/5)
 
         if self._ni_task.write(bitmask_offset) <= 0:
             raise IOError('Could not write offset bitmask.')
