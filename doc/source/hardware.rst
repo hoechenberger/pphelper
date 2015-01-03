@@ -5,5 +5,5 @@ The ``hardware`` Module
    :maxdepth: 1
 
    olfactometer
-   pid
+   analoginput
    gustometer
