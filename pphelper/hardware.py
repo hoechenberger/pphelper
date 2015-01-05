@@ -193,7 +193,7 @@ class Olfactometer(_StimulationApparatus):
         ni_trigger_line : string, optional
             A line on which to generate an additional trigger pulse as the
             olfactometer stimulation is initiated. This can be used to
-            start the recording of PID data, for example.
+            start the acquisition of PID data, for example.
         ni_task_name : string, optional
             The name of the NI DAQ task to create.
             Defaults to ``Olfactometer``.
@@ -389,22 +389,22 @@ class Olfactometer(_StimulationApparatus):
             raise IOError('Could not write offset bitmask.')
 
 
-class PID(object):
+class AnalogInput(object):
     """
-    Provides an interface to a photo-ionization detector.
+    Analog data acquisition using a National Instruments board.
 
     """
     def __init__(self, ni_input_line='Dev1/ai0',
                  ni_trigger_line=None,
                  sampling_duration=3,
                  sampling_rate=2000,
-                 ni_task_name='PID'):
+                 ni_task_name='AnalogInput'):
 
         """
         Parameters
         ----------
         ni_input_line : str, optional
-            The analog input line to acquire the PID data from.
+            The analog input line to acquire the data from.
             Defaults to `Dev1/ai0`.
         ni_trigger_line : str, optional
             If specified, start the acquisition only after a start trigger
@@ -418,7 +418,7 @@ class PID(object):
             Defaults to 2000 Hz.
         ni_task_name : str, optional
             The name of the NIDAQmx task to create.
-            Defaults to `PID`.
+            Defaults to `AnalogInput`.
 
         """
         self._sampling_duration = sampling_duration
