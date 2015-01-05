@@ -93,8 +93,8 @@ copyright = u'2014, Richard Höchenberger'
 
 import pphelper
 # Ger version info.
-# This basically imports __version__ from _version.py.
-exec(open('../../pphelper/_version.py').read())
+# This basically imports __version__ from version.py.
+exec(open('../../pphelper/version.py').read())
 pphelper_version = __version__
 # The short X.Y version.
 version = pphelper_version
