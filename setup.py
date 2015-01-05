@@ -9,8 +9,8 @@ except ImportError:
     raise sys.exit('Could not import setuptools.')
 
 # Ger version info.
-# This basically imports __version__ from _version.py.
-exec(open('pphelper/_version.py').read())
+# This basically imports __version__ from version.py.
+exec(open('pphelper/version.py').read())
 
 setup(
     name='pphelper',
@@ -23,8 +23,9 @@ setup(
     description='Different helper modules for analysis of psychophysics '
                 'experiments.',
     long_description=open('README.rst').read(),
-    install_requires=['pandas >= 0.14.1', 'matplotlib', 'pyfftw >= 0.9.2',
-                      'scipy', 'numpy >= 1.7.2'],
+    install_requires=['sphinxcontrib-napoleon', 'psychopy >= 1.81.03',
+                      'pandas >= 0.14.1', 'matplotlib', 'scipy',
+                      'numpy >= 1.7.2'],
     classifiers=['Intended Audience :: Science/Research',
                  'Programming Language :: Python',
                  'Topic :: Scientific/Engineering :: Bio-Informatics',
@@ -36,8 +37,8 @@ setup(
                  'Operating System :: Microsoft :: Windows',
                  'Programming Language :: Python :: 2',
                  'Programming Language :: Python :: 2.6',
-                 'Programming Language :: Python :: 2.7',
-                 'Programming Language :: Python :: 3',
-                 'Programming Language :: Python :: 3.3',
-                 'Programming Language :: Python :: 3.4'],
+                 'Programming Language :: Python :: 2.7']
+                  # 'Programming Language :: Python :: 3',
+                 # 'Programming Language :: Python :: 3.3',
+                 # 'Programming Language :: Python :: 3.4'],
 )

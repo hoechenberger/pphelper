@@ -1,0 +1,3 @@
+git+https://github.com/psychopy/psychopy.git@1.81.03#egg=psychopy
+svn+http://pylibnidaqmx.googlecode.com/svn/trunk
+-e .

@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-pphelper.racemodel
-==================
-
 Race model inequality analysis implementation, based on Ulrich, Miller,
 and Schröter (2007): 'Testing the race model inequality: An algorithm
 and computer programs', published in Behavior Research Methods 39 (2),
@@ -11,20 +8,21 @@ pp. 291-302.
 
 Provides
 --------
- - ``gen_cdfs_from_raw_rts`` : Assess cumulative distribution functions from response time data and calculate the race model assumptions.
- - ``gen_cdfs_from_dataframe`` : Assess cumulative distribution functions from response time data and calculate the race model assumptions.
  - ``gen_cdf`` : Estimate the cumulative distribution function from response time data.
+ - ``gen_cdfs_from_list`` : Convenience function: Applys ``gen_cdf`` to a list of data sets.
  - ``gen_percentiles`` : Calculate equally spaced percentiles values.
- - ``gen_step_fun`` : Generate a step function from a set of observed response times.
  - ``get_percentiles_from_cdf`` : Get the values (response times) of a cumulative distribution function at the specified percentiles.
- - ``calculate_statistics`` : Perform statistical tests.
+ - ``gen_step_fun`` : Generate a step function from a set of observed response times.
 
 """
 
 from __future__ import division, unicode_literals
 import pandas as pd
 import numpy as np
-from scipy.stats import ttest_rel, wilcoxon
+import warnings
+from scipy.stats import rankdata
+from scipy.interpolate import interp1d
+from . import utils
 
 
 def gen_cdf(rts, t_max=None):
@@ -43,13 +41,22 @@ def gen_cdf(rts, t_max=None):
 
     Returns
     -------
-    Series
+    DataFrame or Series
         A Series containing the estimated cumulative frequency polygon,
         indexed by the time points in ms.
+
+    See Also
+    --------
+    gen_cdfs_from_dataframe, gen_cdfs_from_list, get_percentiles_from_cdf,
+    gen_step_fun
 
     Notes
     -----
     Response times will be rounded to 1 millisecond.
+    The algorithm is heavily adapted from the one described by Ulrich,
+    Miller, and Schröter (2007):
+    'Testing the race model inequality: An algorithm and computer
+    programs', published in Behavior Research Methods 39 (2), pp. 291-302.
 
     Examples
     --------
@@ -91,52 +98,333 @@ def gen_cdf(rts, t_max=None):
     280    1.000000
     Length: 281, dtype: float64
 
-    See Also
-    --------
-    get_percentiles_from_cdf
-
     """
 
     # Convert input data to a Series, and round to 1 ms
-    C = pd.Series(rts).round().astype('int')
+    rts = pd.Series(rts).round().astype('int')
+
+    if rts.loc[rts < 0].any():
+        rts = rts[rts >= 0]
+        warnings.warn('At least one supplied response time was '
+                      'less than zero and removed before '
+                      'estimating the empirical CDF.')
 
     if t_max is None:
-        t_max = C.max()
+        t_max = rts.max()
     else:
         t_max = int(round(t_max))
 
-    C_sorted = C.order()
-    C_unique = C_sorted.unique()
-
-    n = C_sorted.size
-    k = C_unique.size
-
-    # Number of occurrences of each element.
-    N = C_sorted.value_counts().sort_index()
-    s = N.cumsum()
-
-    # Add leading 0 element because our algorithm
-    # starts iteration at index 1.
-    # This is done to maintain close similarity to the published algorithm.
-    C_unique = np.append(0, C_unique)
-    s = np.append(0, s)
-    N = np.append(0, N)
-
-    result = np.zeros(t_max+1)
     timeline = np.arange(t_max+1)
-    i = 1
-    for t in timeline:
-        if t < C_unique[1]:
-            result[t] = 0
-        elif t >= C_unique[-1]:
-            result[t] = 1
-        elif i < k:
-            result[t] = 1/n * (s[i-1] + N[i]/2 + (N[i]+N[i+1]) / 2 *
-                               (t-C_unique[i]) / (C_unique[i+1]-C_unique[i]))
-            if t+1 == C_unique[i+1]:
-                i += 1
 
-    return pd.Series(result, index=pd.Index(timeline, name='t'))
+    # We first sort the RTs from smallest to largest, rank them
+    # with the 'maximum' method (i.e. in the case of ties, all ties
+    # will receive the highest possible rank), select all unique ranks,
+    # and use these to calculate the plotting positions.
+    rts_sorted = rts.order()
+    p = np.unique(rankdata(rts_sorted, method='max')) / len(rts_sorted)
+
+    # rts_unique are the x values corresponding to our plotting positions.
+    rts_unique = rts_sorted.unique()
+    rt_min = rts_unique.min()
+    rt_max = rts_unique.max()
+
+    # We now calculate the midpoints of the initial plotting positions
+    # to use as _new_ plotting positions.
+    #
+    # The very first midpoint is treated specially to make the following
+    # for loop easier to read.
+    p_mid = np.empty(rts_unique.shape)
+    p_mid[0] = 1/2 * p[0]
+
+    for i in range(len(rts_unique) - 1):
+        dp = p[i+1] - p[i]
+        p_mid[i+1] = p[i] + 1/2 * dp
+
+    # Finally construct the CDF.
+    # All values < min(rts) shall be 0,
+    # all values >= max(rts) shall be 1,
+    # and all values in-between shall be stepwise linearly interpolated.
+    interpolate = interp1d(rts_unique, p_mid, bounds_error=False)
+
+    cdf = np.empty(t_max+1)
+    cdf[:rt_min] = 0
+    cdf[rt_max:] = 1
+    cdf[rt_min:rt_max] = interpolate(np.arange(rt_min, rt_max))
+
+    return pd.Series(cdf, index=pd.Index(timeline, name='t'))
+
+
+def gen_cdfs_from_list(data, t_max=None, names=None,
+                       return_type='dataframe'):
+    """
+    Estimate the empirical CDFs for a list of arrays.
+
+    The is a convenience function that wraps ``gen_cdf``.
+
+    Parameters
+    ----------
+    data : list of array_like objects
+        A list of raw response time arrays. The RTs do not have to be
+        ordered and may contain duplicate values.
+    t_max : int, optional
+        Up to which time point (in milliseconds) the model should be
+        calculated. If not specified, the maximum value of the supplied
+        input data will be used.
+    return_type : {'dataframe', 'list'}
+        The format of the returned object. `dataframe` returns a
+        DataFrame, `list` returns a list of `Series`.
+
+    Returns
+    -------
+    DataFrame or list of Series
+        The estimated empirical CDFs as columns of a DataFrame (default)
+        or as a list of Series (if `return_type='list'`).
+
+    Raises
+    ------
+    ValueError
+        If the `name` parameter does not have the same lengths as the
+        data list.
+
+    See Also
+    --------
+    gen_cdf, gen_cdfs_from_dataframe, get_percentiles_from_cdf,
+    gen_step_fun
+
+    Examples
+    --------
+    >>> from pphelper.racemodel import gen_cdfs_from_list
+    >>> import numpy as np
+    >>> RTs = [np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270,
+     280]), np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291])]
+    >>> gen_cdfs_from_list(RTs, names=['CondA', 'CondB'])
+            CondA     CondB
+    t
+    0    0.000000  0.000000
+    1    0.000000  0.000000
+    2    0.000000  0.000000
+    3    0.000000  0.000000
+    4    0.000000  0.000000
+    5    0.000000  0.000000
+    6    0.000000  0.000000
+    7    0.000000  0.000000
+    8    0.000000  0.000000
+    9    0.000000  0.000000
+    10   0.000000  0.000000
+    11   0.000000  0.000000
+    12   0.000000  0.000000
+    13   0.000000  0.000000
+    14   0.000000  0.000000
+    15   0.000000  0.000000
+    16   0.000000  0.000000
+    17   0.000000  0.000000
+    18   0.000000  0.000000
+    19   0.000000  0.000000
+    20   0.000000  0.000000
+    21   0.000000  0.000000
+    22   0.000000  0.000000
+    23   0.000000  0.000000
+    24   0.000000  0.000000
+    25   0.000000  0.000000
+    26   0.000000  0.000000
+    27   0.000000  0.000000
+    28   0.000000  0.000000
+    29   0.000000  0.000000
+    ..        ...       ...
+    262  0.828671  0.400000
+    263  0.835664  0.425000
+    264  0.842657  0.450000
+    265  0.849650  0.475000
+    266  0.856643  0.500000
+    267  0.863636  0.525000
+    268  0.870629  0.550000
+    269  0.877622  0.583333
+    270  0.884615  0.616667
+    271  0.892308  0.650000
+    272  0.900000  0.683333
+    273  0.907692  0.716667
+    274  0.915385  0.750000
+    275  0.923077  0.783333
+    276  0.930769  0.816667
+    277  0.938462  0.850000
+    278  0.946154  0.857143
+    279  0.953846  0.864286
+    280  1.000000  0.871429
+    281  1.000000  0.878571
+    282  1.000000  0.885714
+    283  1.000000  0.892857
+    284  1.000000  0.900000
+    285  1.000000  0.907143
+    286  1.000000  0.914286
+    287  1.000000  0.921429
+    288  1.000000  0.928571
+    289  1.000000  0.935714
+    290  1.000000  0.942857
+    291  1.000000  1.000000
+
+    [292 rows x 2 columns]
+
+    """
+
+    if t_max is None:
+        t_max = utils.get_max_from_list(data)
+
+    if (names is not None) and (len(data) != len(names)):
+        raise ValueError('Please supply a name parameter with the same '
+                         'number of elements as your data list.')
+
+    # Contruct the CDFs and assign the correct names to the Series
+    # objects. The names will serve as column names of the DataFrame
+    # if `return_type='dataframe'`.
+    cdfs = [gen_cdf(x, t_max=t_max) for x in data]
+    if names is not None:
+        for i, cdf in enumerate(cdfs):
+            cdfs[i].name = names[i]
+
+    if return_type == 'dataframe':
+        results = pd.DataFrame(cdfs).T
+    elif return_type == 'list':
+        results = cdfs
+
+    return results
+
+
+def gen_cdfs_from_dataframe(data, rt_column='RT',
+                            modality_column='Modality',
+                            names=None):
+    """
+    Create cumulative distribution functions (CDFs) for response time data.
+
+    Parameters
+    ----------
+
+    data : DataFrame
+        A DataFrame with containing at least two columns: one with response
+        times, and another one specifying the corresponding modalities.
+    rt_column : string, optional
+        The name of the column containing the response times. Defaults
+        to ``RT``.
+    modality_column : string, optional
+        The name of the column containing the modalities corresponding
+        to the response times. Defaults to ``Modality``.
+    names : list, optional
+        A list of length 4, supplying the names of the modalities. The
+        first three elements specify the modalities in the input data to
+        consider. These three and the fourth argument are also used to
+        label the columns in the returned DataFrame.
+        If this argument is not supplied, a default list
+        ``['A', 'B', 'AB']`` will be used.
+
+    Returns
+    -------
+    results : DataFrame
+        A DataFrame containing the empirical cumulative distribution
+        functions generated from the input, one CDF per column. The number
+        of columns depends on the number of unique values in the
+        `modality_column` or on the `names` argument,
+
+    See Also
+    --------
+    gen_cdf, gen_cdfs_from_list, gen_step_fun, get_percentiles_from_cdf
+
+    Notes
+    -----
+    This function internally calls ``gen_cdf``. Please
+    see this function to find out about additional optional keyword
+    arguments.
+
+    Examples
+    --------
+
+    >>> from pphelper.racemodel import gen_cdfs_from_dataframe
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> data = pd.DataFrame({'RT': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291,
+    ... 245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319,
+    ... 234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280]),
+    ... 'Modality': ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x',
+    ... 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y',
+    ... 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', 'z', ]})
+    >>> gen_cdfs_from_dataframe(data)
+                x         y  z
+    t
+    0    0.000000  0.000000  0
+    1    0.000000  0.000000  0
+    2    0.000000  0.000000  0
+    3    0.000000  0.000000  0
+    4    0.000000  0.000000  0
+    5    0.000000  0.000000  0
+    6    0.000000  0.000000  0
+    7    0.000000  0.000000  0
+    8    0.000000  0.000000  0
+    9    0.000000  0.000000  0
+    10   0.000000  0.000000  0
+    11   0.000000  0.000000  0
+    12   0.000000  0.000000  0
+    13   0.000000  0.000000  0
+    14   0.000000  0.000000  0
+    15   0.000000  0.000000  0
+    16   0.000000  0.000000  0
+    17   0.000000  0.000000  0
+    18   0.000000  0.000000  0
+    19   0.000000  0.000000  0
+    20   0.000000  0.000000  0
+    21   0.000000  0.000000  0
+    22   0.000000  0.000000  0
+    23   0.000000  0.000000  0
+    24   0.000000  0.000000  0
+    25   0.000000  0.000000  0
+    26   0.000000  0.000000  0
+    27   0.000000  0.000000  0
+    28   0.000000  0.000000  0
+    29   0.000000  0.000000  0
+    ..        ...       ... ..
+    290  0.942857  0.916964  1
+    291  1.000000  0.918750  1
+    292  1.000000  0.920536  1
+    293  1.000000  0.922321  1
+    294  1.000000  0.924107  1
+    295  1.000000  0.925893  1
+    296  1.000000  0.927679  1
+    297  1.000000  0.929464  1
+    298  1.000000  0.931250  1
+    299  1.000000  0.933036  1
+    300  1.000000  0.934821  1
+    301  1.000000  0.936607  1
+    302  1.000000  0.938393  1
+    303  1.000000  0.940179  1
+    304  1.000000  0.941964  1
+    305  1.000000  0.943750  1
+    306  1.000000  0.945536  1
+    307  1.000000  0.947321  1
+    308  1.000000  0.949107  1
+    309  1.000000  0.950893  1
+    310  1.000000  0.952679  1
+    311  1.000000  0.954464  1
+    312  1.000000  0.956250  1
+    313  1.000000  0.958036  1
+    314  1.000000  0.959821  1
+    315  1.000000  0.961607  1
+    316  1.000000  0.963393  1
+    317  1.000000  0.965179  1
+    318  1.000000  0.966964  1
+    319  1.000000  1.000000  1
+
+    [320 rows x 3 columns]
+
+    """
+    if names is None:
+        names = data[modality_column].sort(inplace=False).unique()
+
+    if not data[modality_column].isin(names).all():
+        raise AssertionError('Could not find specified data.')
+
+    # We construct a list of lists of RTs (one for each modality).
+    rts = [data.loc[data[modality_column] == modality, rt_column]
+           for modality in names]
+
+    result = gen_cdfs_from_list(rts, names=names, return_type='dataframe')
+    return result
 
 
 def gen_percentiles(n=10):
@@ -153,6 +441,12 @@ def gen_percentiles(n=10):
     -------
     p : ndarray
         1-dimensional array of the calculated percentiles.
+
+    Raises
+    ------
+    TypeError
+        If the supplied percentile number could not be converted to a
+        rounded integer.
 
     See Also
     --------
@@ -171,10 +465,7 @@ def gen_percentiles(n=10):
     except TypeError:
         raise TypeError('Please supply an integer to gen_percentiles().')
 
-    p = np.zeros(n)
-    for i in range(1, n+1):
-        p[i-1] = (i-0.5) / n
-
+    p = np.linspace(0.5 * 1/n, 1 - 0.5*1/n, n)
     return p
 
 
@@ -185,8 +476,8 @@ def get_percentiles_from_cdf(cdf, p):
     Parameters
     ----------
     cdf : Series
-        The cumulative distribution polygon. Usually generated by `gen_cdf()`.
-
+        The cumulative distribution polygon. Usually generated by
+        `gen_cdf()`.
     p : array_like
         The percentiles for which to get values from the polygon.
         Usually generated by `gen_percentiles()`.
@@ -194,11 +485,18 @@ def get_percentiles_from_cdf(cdf, p):
     Returns
     -------
     Series
-        Returns a Series of interpolated percentile boundaries (fictive response times).
+        Returns a Series of interpolated percentile boundaries (fictive
+        response times).
+
+    Raises
+    ------
+    TypeError
+        If the supplied percentile object could not be cast into an array,
+        or if the CDF object is not a Series.
 
     See Also
     --------
-    gen_cdf, gen_percentiles
+    gen_cdf, gen_cdfs_from_list, gen_cdfs_from_dataframe, gen_percentiles
 
     Examples
     --------
@@ -263,6 +561,10 @@ def gen_step_fun(rts):
         A Series of the ordered response times (smallest to largest),
         indexed by their respective percentiles.
 
+    See Also
+    --------
+    gen_cdf, gen_cdfs_from_dataframe, gen_cdfs_from_list
+
     Examples
     --------
     >>> from pphelper.racemodel import gen_step_fun
@@ -273,422 +575,94 @@ def gen_step_fun(rts):
     >>> plt.step(sf, sf.index, where='post'); plt.show()
 
     """
+    rts_unique = np.unique(rts)
+    rts_sorted = np.sort(rts)
+    p = np.unique(rankdata(rts_sorted, method='max')) / len(rts_sorted)
 
-    # Drop duplicate values and sort in ascending order
-    rts_sorted = np.unique(rts)
-    p = np.arange(1, len(rts_sorted)+1) / len(rts_sorted)
-
-    return pd.Series(rts_sorted, pd.Index(p, name='p'))
+    return pd.Series(rts_unique, pd.Index(p, name='p'))
 
 
-def gen_cdfs_from_raw_rts(rt_a, rt_b, rt_ab, num_percentiles=10,
-                              percentiles=None, names=None):
+def sum_cdfs(cdfs):
     """
-    Create cumulative distribution functions (CDFs) for response time data
-    and calculate the race model assumptions.
+    Calculate the sum of multiple cumulative distribution functions.
 
     Parameters
     ----------
-
-    rt_a : array_like
-           Raw response time data from the first (usually unimodal)
-           condition.
-    rt_b : array_like
-           Raw response time data from the second (usually unimodal)
-           condition.
-    rt_ab : array_like
-            Raw response time data from the third (usually bimodal)
-            condition.
-    num_percentiles : scalar, optional
-        The number of percentiles to generate from the response time CDFs.
-        Will be ignored if ``percentiles`` is supplied.
-    percentiles : array_like, optional
-        The percentiles for which to get values from the response time
-        CDFs. If this argument is supplied, ``num_percentiles`` will be
-        ignored.
-    names : list, optional
-        A list of length 4, supplying the column names which should be
-        used in the output data frame. The first element corresponds to
-        ``rt_a``, the second to ``rt_b``, the third to ``rt_ab``, and the
-        fourth to the calculated hypothetical sum of the CDFs of ``rt_a``
-        and ``rt_b``. If this argument is not supplied, a default list
-        ``['A', 'B', 'AB', 'A+B']`` will be used.
+    cdfs : list
+        A list of CDFs generated with ``gen_cdf``, ``gen_cdfs_from_list``,
+        or ``gen_cdfs_from_dataframe``.
 
     Returns
     -------
-    results : DataFrame
-        A DataFrame containing the response times extracted from every CDF
-        at the specified (or generated) percentiles. The DataFrame contains
-        four columns. The column names are either those supplied via the
-        ``names`` argument, or the default values ``A``, ``B``, ``AB``,
-        and ``AB``.
-        The first three columns correspond to the input data ``rt_a``,
-        ``rt_b``, and ``rt_ab``, respectively). The fourth column contains
-        the sum of the CDFs generated from ``rt_a`` and ``rt_b``, i.e. the
-        hypothetically fastest no-integration case.
-        If, at any percentile, a value in the third column is less than the
-        corresponding value value in the fourth, the race model is
-        violated.
+    Series
+        The sum of the CDFs in the interval [0, 1], indexed by the time in
+        milliseconds.
+
+    Raises
+    ------
+    ValueError
+        If the supplied CDFs have unequal lengths.
+    IndexError
+        If the indices of the supplied CDF Series objects do not match.
+
+    Notes
+    -----
+    First calculates the sum of the CDFs, and returns the element-wise
+    minima `min[(sum, 1)`.
+
+    See Also
+    --------
+    gen_cdf, gen_cdfs_from_dataframe, gen_cdfs_from_list
 
     Examples
     --------
-    >>> from pphelper import racemodel
+    >>> from pphelper.racemodel import gen_cdfs_from_list, sum_cdfs
     >>> import numpy as np
-    >>> C = {'x': np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291]),
-    ... 'y': np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319]),
-    ... 'z': np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280])}
-    >>> racemodel.gen_cdfs_from_raw_rts(C['x'], C['y'], C['z'])
-                A      B          AB         A+B
-    p
-    0.05  244.000  245.3  234.600000  244.000000
-    0.15  249.000  247.8  238.600000  245.590909
-    0.25  257.000  250.5  240.375000  247.292683
-    0.35  260.000  252.1  242.325000  249.285714
-    0.45  264.000  253.7  244.133333  250.916667
-    0.55  268.000  256.2  248.900000  252.250000
-    0.65  271.000  262.6  253.850000  253.583333
-    0.75  274.000  272.0  256.750000  254.916667
-    0.85  277.000  282.2  265.050000  257.765957
-    0.95  290.125  308.5  278.500000  259.808511
-
-    Notes
-    -----
-    If the ``names`` argument is not supplied, a default list
-    ``['A', 'B', 'AB', 'A+B']`` will be used.
-
-    """
-
-    # If no percentile object was supplied, generate a set of percentiles
-    # for which to assess the RTs from
-    # the CDFs.
-    if percentiles is None:
-        percentiles = gen_percentiles(num_percentiles)
-    # If however we got a percentile object, try to convert it into a
-    # Numpy array.
-    else:
-        try:
-            percentiles = np.array(percentiles)
-        except ValueError:
-            raise ValueError('Please supply an array-like  percentile '
-                             'object.')
-
-    if names is None:
-        names = ['A', 'B', 'AB', 'A+B']
-    else:
-        try:
-            names = list(names)
-        except ValueError:
-            raise ValueError('Please supply the column names as a list '
-                             'in gen_cdfs_from_raw_rts().')
-
-    # Find the maximum response time
-    rt_max = np.nanmax(np.concatenate([rt_a, rt_b, rt_ab]))
-    assert rt_max > 0
-
-    # Generate DataFrames from the raw RT input and drop NaN values.
-    rt = {names[0]: pd.Series(rt_a).dropna(),
-          names[1]: pd.Series(rt_b).dropna(),
-          names[2]: pd.Series(rt_ab).dropna()}
-
-    # Generate the cumulative distribution functions.
-    cdf = dict()
-    for name in rt.keys():
-        cdf[name] = gen_cdf(rt[name], t_max=rt_max)
-
-    # Generate the hypothetical CDF for the no-integration case.
-    cdf[names[3]] = cdf[names[0]] + cdf[names[1]]
-
-    # Now fetch the corresponding values from the CDFs.
-    results = pd.DataFrame()
-    for name in cdf.keys():
-        results[name] = get_percentiles_from_cdf(cdf[name], percentiles)
-
-    # Order columns
-    results = results[names]
-
-    return results
-
-
-def plot_cdfs(data, percentile_index='p', colors=None, outfile=None):
-    """
-    Plot the response time distributions.
-
-    The distributions are usually acquired via
-    ``gen_cdfs_from_raw_rts`` or or ``gen_cdfs_from_dataframe``.
-
-    Parameters
-    ----------
-    data : DataFrame
-        The response time data, usually generated by
-        ``gen_cdfs_from_raw_rts`` or ``gen_cdfs_from_dataframe``.
-    percentile_index : string, optional
-        The name of the the DataFrame index in ``data`` to use when
-        plotting. This is only required when ``data`` is a MultiIndex
-        DataFrame.
-    colors : list, optional
-        Desired colors of the elements to plot. The first element of the
-        list corresponds to the first column of response times in ``data``,
-        the second item to the second column, etc.
-    outfile : string, optional
-        The output filename to save the plot to. If ``None``, display the
-        plots, but do not save them.
-
-    Returns
-    -------
-    fig
-        The matplotlib figure object.
-
-    Notes
-    -----
-    If ``outfile`` is not supplied, plots will be displayed, but not saved
-    to disk.
-
-    See also
-    --------
-    gen_cdfs_from_raw_rts : Generate data in the correct input
-        format for this function.
+    >>> RTs = [np.array([234, 238, 240, 240, 243, 243, 245, 251, 254, 256, 259, 270, 280]), np.array([244, 249, 257, 260, 264, 268, 271, 274, 277, 291])]
+    >>> cdfs = gen_cdfs_from_list(RTs, names=['A', 'B'])
+    >>> sum_cdfs([cdfs['A'], cdfs['B']])
+    t
+    0     0
+    1     0
+    2     0
+    3     0
+    4     0
+    5     0
+    6     0
+    7     0
+    8     0
+    9     0
+    10    0
+    11    0
+    12    0
+    13    0
+    14    0
+    ...
+    277    1
+    278    1
+    279    1
+    280    1
+    281    1
+    282    1
+    283    1
+    284    1
+    285    1
+    286    1
+    287    1
+    288    1
+    289    1
+    290    1
+    291    1
+    Length: 292, dtype: float64
 
     """
+    cdf_lengths_equal = all([cdf.shape == cdfs[0].shape for cdf in cdfs])
+    if not cdf_lengths_equal:
+        raise ValueError('Please supply CDFs with equal lengths.')
 
-    import matplotlib
-    # matplotlib.use() has to be called before importing pyplot.
-    if outfile:
-        matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    # Larger fonts in plots.
-    matplotlib.rcParams.update({'font.size': 22})
+    cdf_indices_equal = all([cdfs[0].index.equals(cdf.index)
+                             for cdf in cdfs])
+    if not cdf_indices_equal:
+        raise IndexError('Please supply CDFs with equal indices.')
 
-    if colors is None:
-        color_set = ['#7fc97f', '#beaed4', '#fdc086', '#686665']
-        colors = dict()
-        for i, modality in enumerate(data.columns):
-            colors[modality] = color_set[i]
-
-    if data.index.nlevels == 1:
-        index = data.index
-    else:
-        index = data.index.levels[data.index.names.index(percentile_index)]
-
-    fig = plt.figure(figsize=[12, 8])
-    plt.hold(True)
-    for modality in data.columns:
-        plt.plot(data[modality],
-                 index,
-                 '--o', label=modality, color=colors[modality],
-                 linewidth=3, markersize=10, alpha=0.7)
-
-    plt.yticks(index)
-    plt.grid(True)
-    plt.title('Response Time Distributions', weight='bold')
-    plt.xlabel('RT', weight='bold')
-    plt.ylabel('Proportion of Responses', weight='bold')
-    plt.legend(loc='lower right')
-    plt.tight_layout()
-
-    if outfile:
-        try:
-            fig.savefig(outfile)
-        except IOError:
-            raise IOError('Could not save the figure. Please check the '
-                          'supplied path.')
-
-    return fig
-
-
-def gen_cdfs_from_dataframe(data, rt_column='RT',
-                            modality_column='Modality',
-                            num_percentiles=10, percentiles=None,
-                            names=None):
-    """
-    Create cumulative distribution functions (CDFs) for response time data
-    and calculate the race model assumptions.
-
-    Parameters
-    ----------
-
-    data : DataFrame
-        A DataFrame with containing at least two columns: one with response
-        times, and another one specifying the corresponding modalities.
-    rt_column : string, optional
-        The name of the column containing the response times. Defaults
-        to ``RT``.
-    modality_column : string, optional
-        The name of the column containing the modalities corresponding
-        to the response times. Defaults to ``Modality``.
-    num_percentiles : scalar, optional
-        The number of percentiles to generate from the response time CDFs.
-        Will be ignored if ``percentiles`` is supplied.
-    percentiles : array_like, optional
-        The percentiles for which to get values from the response time
-        CDFs. If this argument is supplied, ``num_percentiles`` will be
-        ignored.
-    names : list, optional
-        A list of length 4, supplying the names of the modalities. The
-        first three elements specify the modalities in the input data to
-        consider. These three and the fourth argument are also used to
-        label the columns in the returned DataFrame.
-        If this argument is not supplied, a default list
-        ``['A', 'B', 'AB', 'A+B']`` will be used.
-
-    Returns
-    -------
-    results : DataFrame
-        A DataFrame containing the response times extracted from every CDF
-        at the specified (or generated) percentiles. The DataFrame contains
-        four columns. The column names are either those supplied via the
-        ``names`` argument, or the default values ``A``, ``B``, ``AB``,
-        and ``AB``.
-        The first three columns correspond to the input data ``rt_a``,
-        ``rt_b``, and ``rt_ab``, respectively). The fourth column contains
-        the sum of the CDFs generated from ``rt_a`` and ``rt_b``, i.e. the
-        hypothetically fastest no-integration case.
-        If, at any percentile, a value in the third column is less than the
-        corresponding value value in the fourth, the race model is
-        violated.
-
-    Notes
-    -----
-    This function internally calls ``gen_cdfs_from_raw_rts``. Please
-    see this function to find out about additional optional keyword
-    arguments.
-
-    See Also
-    --------
-    gen_cdfs_from_raw_rts
-
-    """
-
-    # If no percentile object was supplied, generate a set of percentiles
-    # for which to assess the RTs from
-    # the CDFs.
-    if percentiles is None:
-        percentiles = gen_percentiles(num_percentiles)
-    # If however we got a percentile object, try to convert it into a
-    # Numpy array.
-    else:
-        try:
-            percentiles = np.array(percentiles)
-        except ValueError:
-            raise ValueError('Please supply an array-like  percentile '
-                             'object.')
-
-    if names is None:
-        names = ['A', 'B', 'AB', 'A+B']
-
-    # FIXME
-    # Actually we should:
-    #   o filter the DataFrame so that the modality_colum only
-    #     contains elements supplied in the names array
-    #   o then check if all names are can actually be found in
-    #     that column
-    #   o only if that fails, raise the 'Could not find specified data'
-    #     error.
-    #
-    # Right now, the user cannot use this function if it is supposed to
-    # operate only on a subset of the data.
-    #
-    # When implementing this, also check whether the data object needs to
-    # be copied first -- we don't want to cause side-effects!
-    if not data[modality_column].isin(names[:-1]).all():
-        raise AssertionError('Could not find specified data.')
-
-    rt_a = data.loc[data[modality_column] == names[0], rt_column]
-    rt_b = data.loc[data[modality_column] == names[1], rt_column]
-    rt_ab = data.loc[data[modality_column] == names[2], rt_column]
-
-    result = gen_cdfs_from_raw_rts(rt_a, rt_b, rt_ab,
-                                   num_percentiles=num_percentiles,
-                                   percentiles=percentiles,
-                                   names=names)
-
-    return result[names]
-
-
-def calculate_statistics(data_list, names=None, test_type='t-test'):
-    """
-    Test for violations of the race model inequality.
-
-    Parameters
-    ----------
-    data_list : list
-        A list of DataFrames. Each individual DataFrame should contain data
-        generated either by ``gen_cdfs_from_raw_rts`` or
-        ``gen_cdfs_from_dataframe``. Column names and indices of all
-        DataFrames must be equal.
-    names : list, optional
-        A list of strings contaning the names of the columns to compare.
-        Defaults to ``['AB', 'A+B']``.
-        The first element is passed as first population to the statistical
-        function, and the second element as the second. See the ``Notes``
-        section for implications.
-    test_type : string, optional
-        The statistical test to perform. Currently, valid values are
-        ``t-test`` for a pairwise t-test, and ``wilcoxon`` for a Wilcoxon
-        signed-rank test.
-
-    Returns
-    -------
-    results : DataFrame
-        A DataFrame containing the test statistic and ``p`` value for
-        every percentile.
-
-    Notes
-    -----
-        Since the first element in the ``names`` list is passed as first
-        argument to the statistical test function, and the second element
-        is passed as the second, in the test of a t-test a negative test
-        statistic implies a smaller mean in the first column than in the
-        second. Accordingly, a positive t-test statistic implied a greater
-        mean in the first column than in the second.
-
-    See Also
-    --------
-        ``gen_cdfs_from_raw_rts`` ``gen_cdfs_from_dataframe``
-
-    """
-
-    tests = ['t-test', 'wilcoxon']
-    if not test_type in tests:
-        raise TypeError('Please specify a valid test: '
-                    't-test, wilcoxon.')
-
-
-    if names is None:
-        names = ['AB', 'A+B']
-
-    if len(data_list) < 3:
-        raise TypeError('Please supply a list of at least 3 data frames.')
-
-    try:
-        index = data_list[0].index.copy()
-        for data in data_list[1:]:
-            if not index.equals(data.index):
-                raise ValueError('Supplied data frames must have the same '
-                                 'index.')
-    except TypeError:
-                raise TypeError('Please supply a list of at least 3 data '
-                                'frames.')
-
-    statistics = []
-    p_values = []
-    sample = {}
-
-    for percentile in index:
-        sample[names[0]] = [data.loc[percentile, names[0]] for
-                            data in data_list]
-        sample[names[1]] = [data.loc[percentile, names[1]] for
-                            data in data_list]
-
-        if test_type == 't-test':
-            statistic, p = ttest_rel(sample[names[0]], sample[names[1]])
-        elif test_type == 'wilcoxon':
-            statistic, p = wilcoxon(sample[names[0]], sample[names[1]])
-
-        statistics.append(statistic)
-        p_values.append(p)
-
-    results = pd.DataFrame({'statistic': statistics, 'p': p_values},
-                           index=index)
-    results = results[['statistic', 'p']]
-
-    return results
+    return np.minimum(pd.DataFrame(cdfs).T.sum(axis=1), 1)

@@ -4,10 +4,13 @@ Changelog
 ****************
 v0.5, 2014-XX-XX
 ****************
-- Add t-tests and wilcoxon signed-rank tests (``calculate_statistics()``).
-- Add raw data comparison from a DataFrame (``compare_cdfs_from_dataframe``).
 - ``compare_*`` functions renamed to ``gen_*``.
+- ``get_cdf*`` functions renamed to ``get_percentiles*``.
+- Add raw data comparison from a DataFrame (``get_percentiles_from_dataframe``).
 - Add ``utils`` module.
+- Add sum_cdfs() to calculate the sum of an arbitrary number of CDFs.
+- Remove plotting functionality.
+- gen_cdf() completely reworked to be more readable and faster (>2x).
 - Add ``image`` module
 
 ******************

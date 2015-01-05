@@ -1,24 +1,17 @@
 language: python
 
 python:
-  - "2.6"
+  # - "2.6"
   - "2.7"
-  - "3.3"
-  - "3.4"
+  # - "3.3"
+  # - "3.4"
 
 before_install:
   - sudo apt-get update
   - sudo apt-get install libatlas-base-dev gfortran libfftw3-3 libfftw3-dev
-  # For Pillow:
-  - sudo apt-get install libtiff4-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms1-dev libwebp-dev
 
 install:
-  - pip install Pillow
-  - pip install numpy
-  - pip install matplotlib
-  - pip install scipy
-  - pip install pandas
-  - pip install pyfftw
+  - pip install -r requirements.txt
   - pip install .
 
 script: py.test

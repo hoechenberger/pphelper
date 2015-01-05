@@ -15,6 +15,36 @@
 import sys
 import os
 
+# Check if we are on Python 2 or 3, and import the mock module accordingly.
+# It is used to install C-dependent packages on readthedocs.org's
+# building server.
+
+# on_rtd is whether we are on readthedocs.org
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if on_rtd:
+    if sys.version[0] == '3':  # Python 3
+        from unittest.mock import MagicMock
+    elif sys.version[0] == '2':  # Python 2
+        from mock import Mock as MagicMock
+    else:
+        raise ImportError("Don't know how to import MagicMock.")
+
+    class Mock(MagicMock):
+        @classmethod
+        def __getattr__(cls, name):
+                return Mock()
+
+    MOCK_MODULES = ['nidaqmx']
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+else:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    # otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -32,12 +62,16 @@ extensions = [
     'sphinx.ext.autodoc',
     # 'sphinx.ext.doctest',
     # 'sphinx.ext.todo',
-    # 'sphinx.ext.viewcode',
-    'numpydoc',
+    'sphinx.ext.viewcode',
+    # 'numpydoc',
+    'sphinxcontrib.napoleon',
 ]
 
+# Napoleon settings
+napoleon_include_special_with_doc = False
+
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+# templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -110,7 +144,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'nature'
+# html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -118,7 +152,7 @@ html_theme = 'nature'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -139,7 +173,7 @@ html_theme = 'nature'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
