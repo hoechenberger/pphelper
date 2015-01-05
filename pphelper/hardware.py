@@ -391,7 +391,7 @@ class Olfactometer(_StimulationApparatus):
 
 class AnalogInput(object):
     """
-    Provides an interface to a photo-ionization detector.
+    Analog data acquisition using a National Instruments board.
 
     """
     def __init__(self, ni_input_line='Dev1/ai0',
