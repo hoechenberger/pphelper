@@ -24,7 +24,7 @@ setup(
                 'experiments.',
     long_description=open('README.rst').read(),
     install_requires=['sphinxcontrib-napoleon', 'psychopy >= 1.81.03',
-                      'pandas >= 0.14.1', 'matplotlib', 'scipy',
+                      'pandas >= 0.14.1', 'matplotlib', 'pillow', 'scipy',
                       'numpy >= 1.7.2'],
     classifiers=['Intended Audience :: Science/Research',
                  'Programming Language :: Python',
