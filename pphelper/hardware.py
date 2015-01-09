@@ -87,7 +87,10 @@ class _StimulationApparatus(object):
         # declare it to be the currently selected stimulus.
         for stimulus_n, stimulus in enumerate(self._stimuli):
             if stimulus['name'] == name:
-                self._stimulus = self._stimuli[stimulus_n]
+                # We create an explicit copy of the stimulus, so
+                # that modifications to the currently selected
+                # stimulus are not transferred to self._stimuli.
+                self._stimulus = dict(self._stimuli[stimulus_n])
                 break
         # Based on http://stackoverflow.com/a/8653568
         # self._stimulus = (stimulus for stimulus in self._stimuli
