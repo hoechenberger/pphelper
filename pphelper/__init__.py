@@ -9,4 +9,4 @@
 from .version import __version__
 from . import racemodel, hardware, utils, image
 
-__all__ = ['racemodel', 'hardware', 'utils', 'image']
+__all__ = ['racemodel', 'sdt', 'hardware', 'utils', 'image']

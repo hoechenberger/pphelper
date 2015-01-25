@@ -2,7 +2,7 @@
 Changelog
 =========
 ****************
-v0.5, 2014-XX-XX
+v0.5, 2015-XX-XX
 ****************
 - ``compare_*`` functions renamed to ``gen_*``.
 - ``get_cdf*`` functions renamed to ``get_percentiles*``.
@@ -11,7 +11,8 @@ v0.5, 2014-XX-XX
 - Add sum_cdfs() to calculate the sum of an arbitrary number of CDFs.
 - Remove plotting functionality.
 - gen_cdf() completely reworked to be more readable and faster (>2x).
-- Add ``image`` module
+- Add ``image`` module.
+- Add ``sdt`` module with simple d' and criterion calculation.
 
 ******************
 v0.3.1, 2014-09-01

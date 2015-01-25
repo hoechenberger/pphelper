@@ -11,6 +11,7 @@ Welcome to pphelper's documentation!
 
    about
    racemodel
+   sdt
    hardware
    image
    utils

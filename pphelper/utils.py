@@ -10,7 +10,7 @@ Provides
  - ``get_max_from_list`` : Return the maximum value from a list or a list of lists.
 """
 
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 import sys
 import pandas as pd
 import itertools
