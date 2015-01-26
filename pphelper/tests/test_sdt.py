@@ -73,3 +73,8 @@ def test_criterion_strict():
     result_expected = 0.82920933172271627
     result = criterion(hits, fas, n)
     assert np.allclose(result, result_expected)
+
+
+if __name__=='__main__':
+    import pytest
+    pytest.main()

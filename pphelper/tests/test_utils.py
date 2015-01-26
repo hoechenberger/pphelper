@@ -46,3 +46,8 @@ def test_get_max_from_list():
     result = get_max_from_list(data)
 
     assert result == result_expected
+
+
+if __name__=='__main__':
+    import pytest
+    pytest.main()
