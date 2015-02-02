@@ -7,6 +7,6 @@
 """
 
 from .version import __version__
-from . import racemodel, hardware, utils, image
+from . import racemodel, utils, image
 
 __all__ = ['racemodel', 'sdt', 'hardware', 'utils', 'image']
