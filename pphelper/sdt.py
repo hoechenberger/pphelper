@@ -28,7 +28,7 @@ def d_prime(hits, false_alarms, n, nafc=1):
         The number of trials in target and no-target trials.
     nafc : int, optional
         The number of alternative choices in the task. A value of ``1``
-        imples a Yes/No task.
+        implies a Yes/No task.
         Defaults to 1.
 
     Returns
@@ -65,7 +65,7 @@ def criterion(hits, false_alarms, n, nafc=1):
         The number of trials in target and no-target trials.
     nafc : int, optional
         The number of alternative choices in the task. A value of ``1``
-        imples a Yes/No task.
+        implies a Yes/No task.
         Defaults to 1.
 
     Returns
@@ -87,7 +87,7 @@ def criterion(hits, false_alarms, n, nafc=1):
         raise NotImplementedError('Only 1-AFC implemented so far.')
 
     hit_rate, fa_rate = _calculate_hit_and_fa_rates(hits, false_alarms, n)
-    C = -(norm.ppf(hit_rate) + norm.ppf(fa_rate)) / 2
+    C = -0.5 * (norm.ppf(hit_rate) + norm.ppf(fa_rate))
     return C
 
 
