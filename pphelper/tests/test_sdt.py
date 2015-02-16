@@ -55,6 +55,16 @@ def test_d_prime_fa_rate_0():
     assert np.allclose(result, result_expected)
 
 
+def test_a_prime():
+    hits = 20
+    fas = 10
+    n = 25
+
+    result_expected = 0.79166666666666674
+    result = d_prime(hits, fas, n)
+    assert np.allclose(result, result_expected)
+
+
 def test_criterion_loose():
     hits = 20
     fas = 10
