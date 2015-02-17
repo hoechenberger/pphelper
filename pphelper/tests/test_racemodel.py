@@ -446,7 +446,7 @@ def test_gen_percentiles():
     Test gen_percentiles().
     """
     assert np.allclose(gen_percentiles(10),
-                          np.array([ 0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95]))
+                       np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95]))
 
     assert np.allclose(gen_percentiles(13),
                        np.array([0.03846154,  0.11538462,  0.19230769,  0.26923077,  0.34615385,
