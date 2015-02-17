@@ -48,6 +48,6 @@ def test_get_max_from_list():
     assert result == result_expected
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     import pytest
     pytest.main()

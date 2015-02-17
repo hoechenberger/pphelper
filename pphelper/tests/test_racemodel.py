@@ -1499,6 +1499,6 @@ def test_gen_cdfs_from_dataframe():
     assert result.index.equals(result_expected.index)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     import pytest
     pytest.main()

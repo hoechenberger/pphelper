@@ -85,6 +85,6 @@ def test_criterion_strict():
     assert np.allclose(result, result_expected)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     import pytest
     pytest.main()
