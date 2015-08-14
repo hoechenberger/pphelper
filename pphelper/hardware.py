@@ -8,6 +8,7 @@ import nidaqmx
 import numpy as np
 import threading
 import psychopy.core
+import socket
 
 
 class _StimulationApparatus(object):
@@ -552,129 +553,191 @@ class AnalogInput(object):
 
 
 class Gustometer(_StimulationApparatus):
-    pass
-    #     """
-    #     Provide an interface to the Burghart GU002 gustometer.
-    #
-    #     """
-    #     def __init__(self, cycle_duration,
-    #                  ni_trigger_out_line, ni_trigger_in_line,
-    #                  ni_trigger_out_task_name='GustometerOut',
-    #                  ni_trigger_in_task_name='GustometerIn',
-    #                  gusto_ip='192.168.0.1', gusto_port=40175,
-    #                  local_ip='192.168.0.10', local_port=40176):
-    #         """
-    #         Parameters
-    #         ----------
-    #         cycle_duration : float
-    #             The duration of one stimulation cycle, in seconds.
-    #
-    #         ni_trigger_out_line : string
-    #             The digital output line on the NI board which shall be used to
-    #             send the trigger to the gustometer.
-    #
-    #         ni_trigger_in_line : string
-    #             The digital input line on the NI board which shall be used to
-    #             receive the trigger pulse emitted by the gustometer as soon
-    #             presentation of the requested stimulus has actually started.
-    #
-    #         ni_trigger_out_task_name : string, optional
-    #             The name to assign to the trigger output task.
-    #             Defaults to ``GustometerOut``.
-    #
-    #         ni_trigger_in_task_name : string, optional
-    #             The name to assign to the trigger input task.
-    #             Defaults to ``GustometerIn``.
-    #
-    #         gusto_ip : string, optional
-    #             The IP address of the gustometer control computer.
-    #             Defaults to ``192.168.0.1``.
-    #
-    #         gusto_port : int, optional
-    #             The port on which the control software on the gustometer
-    #             control computer is listening for a connection. This should
-    #             usually not need to be changed.
-    #             Defaults to ``40175``.
-    #
-    #         local_ip : string, optional
-    #             The IP address of the computer running the experimental
-    #             scripts. This should be the address of the interface which is
-    #             connected to the gustometer control computer.
-    #             Defaults to ``192.168.0.10``.
-    #
-    #         local_port : string, optional
-    #             The port on which to listen for responses from the gustometer
-    #             control computer.
-    #             Defaults to ``40176``.
-    #
-    #         """
-    #         super(Gustometer, self).__init__()
-    #         self._cycle_duration = cycle_duration
-    #         self._gusto_ip = gusto_ip
-    #         self._gusto_port = gusto_port
-    #         self._local_ip = local_ip
-    #         self._local_port = local_port
-    #         self._timer = psychopy.core.Clock()
-    #         self._stimuli = list()
-    #         self._stimulus = None
-    #
-    #         # Initialize OUT trigger (FROM computer TO gusto).
-    #         # Sending this trigger will cause the gustometer to present the
-    #         # stimulus in the next pulse cycle.
-    #         self._ni_trigger_out_task = nidaqmx.DigitalOutputTask(
-    #             name=ni_trigger_out_task_name
-    #         )
-    #         self._ni_trigger_out_task.create_channel(ni_trigger_out_line)
-    #         self._ni_trigger_out_task.start()
-    #
-    #         # Initialize IN trigger (FROM gusto TO computer).
-    #         # The gustometer will send this trigger as soon as the stimulus
-    #         # presentation has started.
-    #         self._ni_trigger_in_task = nidaqmx.CounterInputTask(
-    #             name=ni_trigger_in_task_name
-    #         )
-    #         self._ni_trigger_in_task.create_channel_count_edges(
-    #             ni_trigger_in_line,
-    #             edge='rising',
-    #             direction='up',
-    #             init=0
-    #         )
-    #         self._ni_trigger_in_task.start()
-    #
-    #         # Initialize the network connection.
-    #         self._socket_send = socket.socket(socket.AF_INET,  # IP
-    #                                           socket.SOCK_DGRAM)  # UDP
-    #
-    #         self._socket_receive = socket.socket(socket.AF_INET,  # IP
-    #                                              socket.SOCK_DGRAM)  # UDP
-    #
-    #         self._socket_receive.bind([self._local_ip, self._local_port])
-    #         self._connect()
-    #
-    #     def _send(self, message):
-    #         self._socket_send.sendto(message, [self._gusto_ip,
-    #                                            self._gusto_port])
-    #
-    #     def _connect(self):
-    #         message = 'CONNECT %d 0' % self._local_ip
-    #         self._send(message)
-    #
-    #     def select_stimulus(self, name):
-    #         super(Gustometer, self).select_stimulus(name)
-    #         message = 'CLASSNUM %d 0' % self._stimulus['class']
-    #         self._send(message)
-    #
-    #     def add_stimulus(self):
-    #         pass
-    #
-    #     def trigger(self):
-    #         if not self._stimulus_selected():
-    #             raise ValueError('No stimulus selected. Please invoke '
-    #                              '``select_stimulus()`` first.')
-    #
-    #         self._ni_trigger_out_task.write(1)
-    #
-    #     # def trigger_conf(self, pulse_dur=300, pause_dur=70):
-    #     #     message = 'TRIGCONF %d %d %d %d' % (pulse_dur, pause_dur,
-    #     #                                         pulse_dur, pause_dur)
-    #     #     self._send(message)
+        """
+        Provide an interface to the Burghart GU002 gustometer.
+
+        """
+        def __init__(self, pulse_duration=0.1, pause_duration=0.2,
+                     gusto_ip='192.168.0.1', gusto_port=40175,
+                     local_ip='192.168.0.10', local_port=40176,
+                     ni_trigger_out_line='Dev1/PFI1',
+                     ni_trigger_in_line='Dev1/ctr0',
+                     ni_trigger_out_task_name='GustometerOut',
+                     ni_trigger_in_task_name='GustometerIn'):
+            """
+            Parameters
+            ----------
+            cycle_duration : float
+                The duration of one stimulation cycle, in seconds.
+
+            ni_trigger_out_line : string
+                The digital output line on the NI board which shall be used to
+                send the trigger to the gustometer.
+
+            ni_trigger_in_line : string
+                The counter input line on the NI board which shall be used to
+                receive the trigger pulse emitted by the gustometer as soon
+                presentation of the requested stimulus has actually started.
+
+            ni_trigger_out_task_name : string, optional
+                The name to assign to the trigger output task.
+                Defaults to ``GustometerOut``.
+
+            ni_trigger_in_task_name : string, optional
+                The name to assign to the trigger input task.
+                Defaults to ``GustometerIn``.
+
+            gusto_ip : string, optional
+                The IP address of the gustometer control computer.
+                Defaults to ``192.168.0.1``.
+
+            gusto_port : int, optional
+                The port on which the control software on the gustometer
+                control computer is listening for a connection. This should
+                usually not need to be changed.
+                Defaults to ``40175``.
+
+            local_ip : string, optional
+                The IP address of the computer running the experimental
+                scripts. This should be the address of the interface which is
+                connected to the gustometer control computer.
+                Defaults to ``192.168.0.10``.
+
+            local_port : string, optional
+                The port on which to listen for responses from the gustometer
+                control computer.
+                Defaults to ``40176``.
+
+            """
+            super(Gustometer, self).__init__()
+            self._pulse_duration = pulse_duration
+            self._pause_duration = pause_duration
+            self._gusto_ip = gusto_ip
+            self._gusto_port = gusto_port
+            self._local_ip = local_ip
+            self._local_port = local_port
+            self._timer = psychopy.core.Clock()
+            self._stimuli = list()
+            self._stimulus = None
+
+            # Initialize OUT trigger (FROM computer TO gusto).
+            # Sending this trigger will cause the gustometer to present the
+            # stimulus in the next pulse cycle.
+            self._ni_trigger_out_task = nidaqmx.DigitalOutputTask(
+                name=ni_trigger_out_task_name
+            )
+            self._ni_trigger_out_task.create_channel(ni_trigger_out_line)
+            self._ni_trigger_out_task.start()
+
+            # Initialize IN trigger (FROM gusto TO computer).
+            # The gustometer will send this trigger as soon as the stimulus
+            # presentation has started.
+            self._ni_trigger_in_task = nidaqmx.CounterInputTask(
+                name=ni_trigger_in_task_name
+            )
+            self._ni_trigger_in_task.create_channel_count_edges(
+                ni_trigger_in_line,
+                edge='rising',
+                direction='up',
+                init=0
+            )
+            self._ni_trigger_in_task.start()
+
+            # Initialize the network connection.
+            self._socket_send = socket.socket(socket.AF_INET,  # IP
+                                              socket.SOCK_DGRAM)  # UDP
+
+            self._socket_receive = socket.socket(socket.AF_INET,  # IP
+                                                 socket.SOCK_DGRAM)  # UDP
+
+            self._socket_receive.bind((self._local_ip, self._local_port))
+            self._socket_receive.settimeout(0.1)
+            self._connect()
+
+        def _send(self, message):
+            self._socket_send.sendto(message, (self._gusto_ip,
+                                               self._gusto_port))
+
+        def _connect(self):
+            message = 'CONNECT %s 0' % self._local_port
+
+            # # Empty receive buffer.
+            # self._socket_receive.setblocking(False)
+            # for ............
+
+            self._send(message)
+
+        def add_stimulus(self, name, classnum, replace=False, **kwargs):
+            """
+            Add a stimulus to the stimulus set of this apparatus.
+
+            Parameters
+            ----------
+            name : string
+                A unique identifier of the stimulus to add.
+            classnum : int
+                The stimulus class number, as defined in the Gusto Control
+                Software.
+            replace : bool, optional
+                Whether an already existing stimulus of the same name should
+                be replaced or not. Defaults to ``False``.
+
+            Notes
+            -----
+            Any additional keyword arguments will be added as additional
+            stimulus properties.
+
+            See Also
+            --------
+            remove_stimulus
+            stimulate
+
+            """
+            super(Gustometer, self).add_stimulus(
+                name=name, classnum=classnum, replace=replace, **kwargs
+            )
+
+        def select_stimulus(self, name):
+            super(Gustometer, self).select_stimulus(name)
+            message = 'CLASSNUM %d 0' % self._stimulus['classnum']
+            self._send(message)
+
+        def stimulate(self):
+            if not self._stimulus_selected():
+                raise ValueError('No stimulus selected. Please invoke '
+                                 '``select_stimulus()`` first.')
+
+            # # Set trigger line to HIGH.
+            # if self._ni_task.write(self._ni_trigger_out_task.write(1)) <= 0:
+            #     raise IOError('Could not write send trigger.')
+            #
+            # psychopy.core.wait(0.010)
+            #
+            # # Set trigger line to LOW again.
+            # if self._ni_task.write(self._ni_trigger_out_task.write(0)) <= 0:
+            #     raise IOError('Could not write send trigger.')
+
+            message = 'TRIGSTART 1 1'
+            self._send(message)
+            self._stimulus = None
+
+        def trigger_conf(self, duration=0.9, int_taste=100, int_bg=100):
+            """
+            Configure the trigger on the gusto.
+
+            Parameters
+            ----------
+            duration : int, optional
+                Trigger duration (stimulation duration) in seconds.
+                Defaults to 0.9s.
+            int_taste : int
+                Taste intensity in percent.
+                Defaults to 100%.
+            int_bg : int
+                Background intensity in percent.
+                Defaults to 100%.
+
+            """
+            message = 'TRIGCONF %d %d %d' % (duration*1000,
+                                             int_taste, int_bg)
+            self._send(message)
