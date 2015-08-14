@@ -357,6 +357,17 @@ class Olfactometer(_StimulationApparatus):
         """
         if self._use_threads:
             self._thread.start()
+            # Now we sleep for 1 ms to allow the thread to start.
+            # If we do not wait, self._stimulus will be set to None
+            # before the thread actually starts processing, and it
+            # won't be able to present a stimulus!
+            # FIXME This needs to be improved!
+            #
+            # while not self._thread.is_alive():
+            #     pass
+            #
+            # did not work.
+            psychopy.core.wait(0.001)
             if blocking_wait:
                 self._thread.join()
         else:
