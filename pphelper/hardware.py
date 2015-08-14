@@ -38,9 +38,6 @@ class _StimulationApparatus(object):
         return any([stimulus['name'] == name for stimulus in
                     self._stimuli])
 
-    def _stimulus_selected(self):
-        return False if self._stimulus is None else True
-
     def add_stimulus(self, **kwargs):
         """
         Add a new stimulus to the stimulus list or replace an existing one.
@@ -370,7 +367,7 @@ class Olfactometer(_StimulationApparatus):
     def _stimulate(self):
         t0 = psychopy.core.getTime()
 
-        if not self._stimulus_selected():
+        if not self._stimulus:
             raise ValueError('No stimulus selected. Please invoke '
                              '``select_stimulus()`` first.')
 
@@ -703,7 +700,7 @@ class Gustometer(_StimulationApparatus):
             self._send(message)
 
         def stimulate(self):
-            if not self._stimulus_selected():
+            if not self._stimulus:
                 raise ValueError('No stimulus selected. Please invoke '
                                  '``select_stimulus()`` first.')
 
