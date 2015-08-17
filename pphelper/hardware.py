@@ -241,7 +241,7 @@ class Olfactometer(_StimulationApparatus):
         del self
 
     def add_stimulus(self, name, bitmask, duration=1,
-                     bitmask_offset=None, stimulate_at=None,
+                     bitmask_offset=None, stimulation_time=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -292,8 +292,8 @@ class Olfactometer(_StimulationApparatus):
 
         super(Olfactometer, self).add_stimulus(
             name=name, bitmask=bitmask, bitmask_offset=bitmask_offset,
-            duration=duration, stimulate_at=stimulate_at, replace=replace,
-            **kwargs
+            duration=duration, stimulation_time=stimulation_time,
+            replace=replace, **kwargs
         )
 
     def select_stimulus(self, name):
@@ -367,13 +367,13 @@ class Olfactometer(_StimulationApparatus):
         stimulus_duration = self._stimulus['duration']
         bitmask = self._stimulus['bitmask']
         bitmask_offset = self._stimulus['bitmask_offset']
-        stimulate_at = self._stimulus['stimulate_at']
+        stimulation_time = self._stimulus['stimulation_time']
 
-        if stimulate_at is not None:
-            if psychopy.core.getTime() < stimulate_at:
+        if stimulation_time is not None:
+            if psychopy.core.getTime() < stimulation_time:
                 psychopy.core.wait(
-                    stimulate_at - psychopy.core.getTime(),
-                    hogCPUperiod=(stimulate_at - psychopy.core.getTime()) / 5
+                    stimulation_time - psychopy.core.getTime(),
+                    hogCPUperiod=(stimulation_time - psychopy.core.getTime()) / 5
                 )
 
         if self._ni_task.write(bitmask) <= 0:
@@ -668,7 +668,7 @@ class Gustometer(_StimulationApparatus):
 
         self._send(message)
 
-    def add_stimulus(self, name, classnum, stimulate_at=None,
+    def add_stimulus(self, name, classnum, stimulation_time=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -697,8 +697,8 @@ class Gustometer(_StimulationApparatus):
         """
         classnum = np.uint8(classnum)
         super(Gustometer, self).add_stimulus(
-            name=name, classnum=classnum, stimulate_at=stimulate_at,
-            replace=replace, **kwargs
+            name=name, classnum=classnum,
+            stimulation_time=stimulation_time, replace=replace, **kwargs
         )
 
     def select_stimulus(self, name):
@@ -770,14 +770,14 @@ class Gustometer(_StimulationApparatus):
         #     raise IOError('Could not write send trigger.')
 
         message = 'TRIGSTART 1 1'
-        stimulate_at = self._stimulus['stimulate_at']
+        stimulation_time = self._stimulus['stimulation_time']
 
-        if stimulate_at is not None:
-            if psychopy.core.getTime() < stimulate_at:
+        if stimulation_time is not None:
+            if psychopy.core.getTime() < stimulation_time:
                 psychopy.core.wait(
-                    stimulate_at - psychopy.core.getTime(),
+                    stimulation_time - psychopy.core.getTime(),
                     hogCPUperiod=(
-                                 stimulate_at - psychopy.core.getTime()) / 5
+                                 stimulation_time - psychopy.core.getTime()) / 5
                 )
 
         self._send(message)
