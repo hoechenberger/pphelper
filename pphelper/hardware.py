@@ -260,6 +260,11 @@ class Olfactometer(_StimulationApparatus):
             The bitmask specifying the valve positions after the
             stimulation has finished. If not specified, all valves will be
             closed at the end of the stimulation.
+        stimulation_time : float, optional
+            The time (in terms of the ``psychopy.core.getTime`` timebase)
+            at which the stimulus should be presented. If ``None``,
+            present the stimulus immediately.
+            Defaults to ``None``.
         replace : bool, optional
             Whether an already existing stimulus of the same name should
             be replaced or not. Defaults to ``False``.
@@ -272,6 +277,7 @@ class Olfactometer(_StimulationApparatus):
         See Also
         --------
         remove_stimulus
+        select_stimulus
         stimulate
 
         """
@@ -563,47 +569,42 @@ class Gustometer(_StimulationApparatus):
         """
         Parameters
         ----------
-        cycle_duration : float
-            The duration of one stimulation cycle, in seconds.
-
-        ni_trigger_out_line : string
-            The digital output line on the NI board which shall be used to
-            send the trigger to the gustometer.
-
-        ni_trigger_in_line : string
-            The counter input line on the NI board which shall be used to
-            receive the trigger pulse emitted by the gustometer as soon
-            presentation of the requested stimulus has actually started.
-
-        ni_trigger_out_task_name : string, optional
-            The name to assign to the trigger output task.
-            Defaults to ``GustometerOut``.
-
-        ni_trigger_in_task_name : string, optional
-            The name to assign to the trigger input task.
-            Defaults to ``GustometerIn``.
-
+        pulse_duration : float, optional
+            The duration of one stimulation pulse, in seconds.
+            Defaults to 0.1.
+        pause_duration : float, optional
+            The duration of the spray pause between two pulses in seconds.
+            Defaults to 0.2
         gusto_ip : string, optional
             The IP address of the gustometer control computer.
             Defaults to ``192.168.0.1``.
-
         gusto_port : int, optional
             The port on which the control software on the gustometer
             control computer is listening for a connection. This should
             usually not need to be changed.
             Defaults to ``40175``.
-
         local_ip : string, optional
             The IP address of the computer running the experimental
             scripts. This should be the address of the interface which is
             connected to the gustometer control computer.
             Defaults to ``192.168.0.10``.
-
         local_port : string, optional
             The port on which to listen for responses from the gustometer
             control computer.
             Defaults to ``40176``.
-
+        ni_trigger_out_line : string
+            The digital output line on the NI board which shall be used to
+            send the trigger to the gustometer.
+        ni_trigger_in_line : string
+            The counter input line on the NI board which shall be used to
+            receive the trigger pulse emitted by the gustometer as soon
+            presentation of the requested stimulus has actually started.
+        ni_trigger_out_task_name : string, optional
+            The name to assign to the trigger output task.
+            Defaults to ``GustometerOut``.
+        ni_trigger_in_task_name : string, optional
+            The name to assign to the trigger input task.
+            Defaults to ``GustometerIn``.
         use_threads : bool, optional
             Whether a Python thread should be created when
             `select_stimulus` is called. This thread would then allow
@@ -679,7 +680,12 @@ class Gustometer(_StimulationApparatus):
             A unique identifier of the stimulus to add.
         classnum : int
             The stimulus class number, as defined in the Gusto Control
-            Software.
+            software.
+        stimulation_time : float, optional
+            The time (in terms of the ``psychopy.core.getTime`` timebase)
+            at which the stimulus should be presented. If ``None``,
+            present the stimulus immediately.
+            Defaults to ``None``.
         replace : bool, optional
             Whether an already existing stimulus of the same name should
             be replaced or not. Defaults to ``False``.
@@ -691,6 +697,7 @@ class Gustometer(_StimulationApparatus):
 
         See Also
         --------
+        select_stimulus
         remove_stimulus
         stimulate
 
