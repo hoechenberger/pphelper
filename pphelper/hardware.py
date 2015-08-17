@@ -242,6 +242,7 @@ class Olfactometer(_StimulationApparatus):
 
     def add_stimulus(self, name, bitmask, duration=1,
                      bitmask_offset=None, onset_delay=0,
+                     stimulate_at=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -281,22 +282,25 @@ class Olfactometer(_StimulationApparatus):
         stimulate
 
         """
-        bitmask = np.array(bitmask)
+        bitmask = np.array(bitmask, dtype=np.uint8)
         if bitmask.shape[0] != self._ni_task_number_of_channels:
             raise ValueError('Shape of the bitmask does not match number '
                              'of physical lines.')
 
         if bitmask_offset is None:
-            bitmask_offset = np.zeros(self._ni_task_number_of_channels)
+            bitmask_offset = np.zeros(
+                self._ni_task_number_of_channels,
+                dtype=np.uint8
+            )
         else:
-            bitmask_offset = np.array(bitmask_offset)
+            bitmask_offset = np.array(bitmask_offset, dtype=np.uint8)
             if bitmask_offset.shape[0] != self._ni_task_number_of_channels:
                 raise ValueError('Please specify a valid bitmask_offset.')
 
         super(Olfactometer, self).add_stimulus(
             name=name, bitmask=bitmask, bitmask_offset=bitmask_offset,
-            duration=duration, onset_delay=onset_delay, replace=replace,
-            **kwargs
+            duration=duration, onset_delay=onset_delay,
+            stimulate_at=stimulate_at, replace=replace, **kwargs
         )
 
     def select_stimulus(self, name):
@@ -386,6 +390,14 @@ class Olfactometer(_StimulationApparatus):
         onset_delay = self._stimulus['onset_delay']
         bitmask = self._stimulus['bitmask']
         bitmask_offset = self._stimulus['bitmask_offset']
+        stimulate_at = self._stimulus['stimulate_at']
+
+        if stimulate_at is not None:
+            if psychopy.core.getTime() < stimulate_at:
+                psychopy.core.wait(
+                    stimulate_at - psychopy.core.getTime(),
+                    hogCPUperiod=(stimulate_at - psychopy.core.getTime()) / 5
+                )
 
         if onset_delay > 0:
             onset_wait = onset_delay - (psychopy.core.getTime() - t0)
@@ -675,7 +687,8 @@ class Gustometer(_StimulationApparatus):
 
             self._send(message)
 
-        def add_stimulus(self, name, classnum, replace=False, **kwargs):
+        def add_stimulus(self, name, classnum, stimulate_at=None,
+                         replace=False, **kwargs):
             """
             Add a stimulus to the stimulus set of this apparatus.
 
@@ -701,8 +714,10 @@ class Gustometer(_StimulationApparatus):
             stimulate
 
             """
+            classnum = np.uint8(classnum)
             super(Gustometer, self).add_stimulus(
-                name=name, classnum=classnum, replace=replace, **kwargs
+                name=name, classnum=classnum, stimulate_at=stimulate_at,
+                replace=replace, **kwargs
             )
 
         def select_stimulus(self, name):
@@ -726,6 +741,16 @@ class Gustometer(_StimulationApparatus):
             #     raise IOError('Could not write send trigger.')
 
             message = 'TRIGSTART 1 1'
+            stimulate_at = self._stimulus['stimulate_at']
+
+            if stimulate_at is not None:
+                if psychopy.core.getTime() < stimulate_at:
+                    psychopy.core.wait(
+                        stimulate_at - psychopy.core.getTime(),
+                        hogCPUperiod=(
+                                     stimulate_at - psychopy.core.getTime()) / 5
+                    )
+
             self._send(message)
             self._stimulus = None
 
