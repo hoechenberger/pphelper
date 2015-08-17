@@ -353,38 +353,25 @@ class Olfactometer(_StimulationApparatus):
 
         Notes
         -----
-        When using thrads, the thread object created by
-        ``select_stimulus`` is started when ``stimulate`` is invoked. It
-        has to be re-created by calling ``select_stimulus`` before
-        ``stimulate`` can be invoked again.
+        ``stimulate`` invokes ``_stimulate``, which itself unsets the
+        currently selected stimulus at the end of the stimulation. You have
+        to invoke ``select_stimulus`` again before you can call
+        ``stimulate`` again.
 
         """
+        if not self._stimulus:
+            raise ValueError('No stimulus selected. Please invoke '
+                             '``select_stimulus()`` first.')
+
         if self._use_threads:
             self._thread.start()
-            # Now we sleep for 1 ms to allow the thread to start.
-            # If we do not wait, self._stimulus will be set to None
-            # before the thread actually starts processing, and it
-            # won't be able to present a stimulus!
-            # FIXME This needs to be improved!
-            #
-            # while not self._thread.is_alive():
-            #     pass
-            #
-            # did not work.
-            psychopy.core.wait(0.001)
             if blocking_wait:
                 self._thread.join()
         else:
             self._stimulate()
 
-        self._stimulus = None
-
     def _stimulate(self):
         t0 = psychopy.core.getTime()
-
-        if not self._stimulus:
-            raise ValueError('No stimulus selected. Please invoke '
-                             '``select_stimulus()`` first.')
 
         stimulus_duration = self._stimulus['duration']
         onset_delay = self._stimulus['onset_delay']
@@ -411,6 +398,8 @@ class Olfactometer(_StimulationApparatus):
 
         if self._ni_task.write(bitmask_offset) <= 0:
             raise IOError('Could not write offset bitmask.')
+
+        self._stimulus = None
 
 
 class AnalogInput(object):
@@ -767,37 +756,23 @@ class Gustometer(_StimulationApparatus):
 
         Notes
         -----
-        When using thrads, the thread object created by
-        ``select_stimulus`` is started when ``stimulate`` is invoked. It
-        has to be re-created by calling ``select_stimulus`` before
-        ``stimulate`` can be invoked again.
-
+        ``stimulate`` invokes ``_stimulate``, which itself unsets the
+        currently selected stimulus at the end of the stimulation. You have
+        to invoke ``select_stimulus`` again before you can call
+        ``stimulate`` again.
         """
+        if not self._stimulus:
+            raise ValueError('No stimulus selected. Please invoke '
+                             '``select_stimulus()`` first.')
+
         if self._use_threads:
             self._thread.start()
-            # Now we sleep for 1 ms to allow the thread to start.
-            # If we do not wait, self._stimulus will be set to None
-            # before the thread actually starts processing, and it
-            # won't be able to present a stimulus!
-            # FIXME This needs to be improved!
-            #
-            # while not self._thread.is_alive():
-            #     pass
-            #
-            # did not work.
-            psychopy.core.wait(0.001)
             if blocking_wait:
                 self._thread.join()
         else:
             self._stimulate()
 
-        self._stimulus = None
-
     def _stimulate(self):
-        if not self._stimulus:
-            raise ValueError('No stimulus selected. Please invoke '
-                             '``select_stimulus()`` first.')
-
         # # Set trigger line to HIGH.
         # if self._ni_task.write(self._ni_trigger_out_task.write(1)) <= 0:
         #     raise IOError('Could not write send trigger.')
