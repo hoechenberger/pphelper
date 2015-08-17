@@ -241,8 +241,7 @@ class Olfactometer(_StimulationApparatus):
         del self
 
     def add_stimulus(self, name, bitmask, duration=1,
-                     bitmask_offset=None, onset_delay=0,
-                     stimulate_at=None,
+                     bitmask_offset=None, stimulate_at=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -261,12 +260,6 @@ class Olfactometer(_StimulationApparatus):
             The bitmask specifying the valve positions after the
             stimulation has finished. If not specified, all valves will be
             closed at the end of the stimulation.
-        onset_delay : float, optional
-            How long to wait after invocation of the ``stimulate``
-            method before actually sending the triggers.
-            This onset delay can for example be used to align the timing
-            of an olfactory stimulus with the onset of a visual stimulus on
-            a computer display, which operates at a fixed refresh rate.
         replace : bool, optional
             Whether an already existing stimulus of the same name should
             be replaced or not. Defaults to ``False``.
@@ -299,8 +292,8 @@ class Olfactometer(_StimulationApparatus):
 
         super(Olfactometer, self).add_stimulus(
             name=name, bitmask=bitmask, bitmask_offset=bitmask_offset,
-            duration=duration, onset_delay=onset_delay,
-            stimulate_at=stimulate_at, replace=replace, **kwargs
+            duration=duration, stimulate_at=stimulate_at, replace=replace,
+            **kwargs
         )
 
     def select_stimulus(self, name):
@@ -371,10 +364,7 @@ class Olfactometer(_StimulationApparatus):
             self._stimulate()
 
     def _stimulate(self):
-        t0 = psychopy.core.getTime()
-
         stimulus_duration = self._stimulus['duration']
-        onset_delay = self._stimulus['onset_delay']
         bitmask = self._stimulus['bitmask']
         bitmask_offset = self._stimulus['bitmask_offset']
         stimulate_at = self._stimulus['stimulate_at']
@@ -385,10 +375,6 @@ class Olfactometer(_StimulationApparatus):
                     stimulate_at - psychopy.core.getTime(),
                     hogCPUperiod=(stimulate_at - psychopy.core.getTime()) / 5
                 )
-
-        if onset_delay > 0:
-            onset_wait = onset_delay - (psychopy.core.getTime() - t0)
-            psychopy.core.wait(onset_wait, hogCPUperiod=onset_wait/5)
 
         if self._ni_task.write(bitmask) <= 0:
             raise IOError('Could not write onset bitmask.')
