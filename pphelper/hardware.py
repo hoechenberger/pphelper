@@ -615,6 +615,7 @@ class Gustometer(_StimulationApparatus):
         super(Gustometer, self).__init__()
         self._pulse_duration = pulse_duration
         self._pause_duration = pause_duration
+        self._classfile = None
         self._gusto_ip = gusto_ip
         self._gusto_port = gusto_port
         self._local_ip = local_ip
@@ -668,6 +669,42 @@ class Gustometer(_StimulationApparatus):
         # for ............
 
         self._send(message)
+
+    def trigger_conf(self, duration=0.9, int_taste=100, int_bg=100):
+        """
+        Configure the trigger on the gusto.
+
+        Parameters
+        ----------
+        duration : int, optional
+            Trigger duration (stimulation duration) in seconds.
+            Defaults to 0.9s.
+        int_taste : int
+            Taste intensity in percent.
+            Defaults to 100%.
+        int_bg : int
+            Background intensity in percent.
+            Defaults to 100%.
+
+        """
+        message = 'TRIGCONF %d %d %d' % (duration * 1000,
+                                         int_taste, int_bg)
+        self._send(message)
+
+    def load_classfile(self, filename):
+        """
+        Load a classes file in the Gusto Control software.
+
+        Parameters
+        ----------
+        filename : string
+            The filename of the classes file to be loaded, including the
+            file extension (typically `.cla`).
+
+        """
+        message = 'CLASSFILE %s' % filename
+        self._send(message)
+        self._classfile = filename
 
     def add_stimulus(self, name, classnum, trigger_time=None,
                      replace=False, **kwargs):
@@ -790,23 +827,3 @@ class Gustometer(_StimulationApparatus):
         self._send(message)
         self._stimulus = None
 
-    def trigger_conf(self, duration=0.9, int_taste=100, int_bg=100):
-        """
-        Configure the trigger on the gusto.
-
-        Parameters
-        ----------
-        duration : int, optional
-            Trigger duration (stimulation duration) in seconds.
-            Defaults to 0.9s.
-        int_taste : int
-            Taste intensity in percent.
-            Defaults to 100%.
-        int_bg : int
-            Background intensity in percent.
-            Defaults to 100%.
-
-        """
-        message = 'TRIGCONF %d %d %d' % (duration*1000,
-                                         int_taste, int_bg)
-        self._send(message)
