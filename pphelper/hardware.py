@@ -241,7 +241,7 @@ class Olfactometer(_StimulationApparatus):
         del self
 
     def add_stimulus(self, name, bitmask, duration=1,
-                     bitmask_offset=None, stimulation_time=None,
+                     bitmask_offset=None, trigger_time=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -260,10 +260,10 @@ class Olfactometer(_StimulationApparatus):
             The bitmask specifying the valve positions after the
             stimulation has finished. If not specified, all valves will be
             closed at the end of the stimulation.
-        stimulation_time : float, optional
+        trigger_time : float, optional
             The time (in terms of the ``psychopy.core.getTime`` timebase)
-            at which the stimulus should be presented. If ``None``,
-            present the stimulus immediately.
+            at which the stimulation should be triggered. If ``None``,
+            trigger immediately.
             Defaults to ``None``.
         replace : bool, optional
             Whether an already existing stimulus of the same name should
@@ -298,7 +298,7 @@ class Olfactometer(_StimulationApparatus):
 
         super(Olfactometer, self).add_stimulus(
             name=name, bitmask=bitmask, bitmask_offset=bitmask_offset,
-            duration=duration, stimulation_time=stimulation_time,
+            duration=duration, trigger_time=trigger_time,
             replace=replace, **kwargs
         )
 
@@ -373,13 +373,13 @@ class Olfactometer(_StimulationApparatus):
         stimulus_duration = self._stimulus['duration']
         bitmask = self._stimulus['bitmask']
         bitmask_offset = self._stimulus['bitmask_offset']
-        stimulation_time = self._stimulus['stimulation_time']
+        trigger_time = self._stimulus['trigger_time']
 
-        if stimulation_time is not None:
-            if psychopy.core.getTime() < stimulation_time:
+        if trigger_time is not None:
+            if psychopy.core.getTime() < trigger_time:
                 psychopy.core.wait(
-                    stimulation_time - psychopy.core.getTime(),
-                    hogCPUperiod=(stimulation_time - psychopy.core.getTime()) / 5
+                    trigger_time - psychopy.core.getTime(),
+                    hogCPUperiod=(trigger_time - psychopy.core.getTime()) / 5
                 )
 
         if self._ni_task.write(bitmask) <= 0:
@@ -669,7 +669,7 @@ class Gustometer(_StimulationApparatus):
 
         self._send(message)
 
-    def add_stimulus(self, name, classnum, stimulation_time=None,
+    def add_stimulus(self, name, classnum, trigger_time=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -681,10 +681,10 @@ class Gustometer(_StimulationApparatus):
         classnum : int
             The stimulus class number, as defined in the Gusto Control
             software.
-        stimulation_time : float, optional
+        trigger_time : float, optional
             The time (in terms of the ``psychopy.core.getTime`` timebase)
-            at which the stimulus should be presented. If ``None``,
-            present the stimulus immediately.
+            at which the stimulation should be triggered. If ``None``,
+            trigger immediately.
             Defaults to ``None``.
         replace : bool, optional
             Whether an already existing stimulus of the same name should
@@ -705,7 +705,7 @@ class Gustometer(_StimulationApparatus):
         classnum = np.uint8(classnum)
         super(Gustometer, self).add_stimulus(
             name=name, classnum=classnum,
-            stimulation_time=stimulation_time, replace=replace, **kwargs
+            trigger_time=trigger_time, replace=replace, **kwargs
         )
 
     def select_stimulus(self, name):
@@ -777,14 +777,14 @@ class Gustometer(_StimulationApparatus):
         #     raise IOError('Could not write send trigger.')
 
         message = 'TRIGSTART 1 1'
-        stimulation_time = self._stimulus['stimulation_time']
+        trigger_time = self._stimulus['trigger_time']
 
-        if stimulation_time is not None:
-            if psychopy.core.getTime() < stimulation_time:
+        if trigger_time is not None:
+            if psychopy.core.getTime() < trigger_time:
                 psychopy.core.wait(
-                    stimulation_time - psychopy.core.getTime(),
+                    trigger_time - psychopy.core.getTime(),
                     hogCPUperiod=(
-                                 stimulation_time - psychopy.core.getTime()) / 5
+                                 trigger_time - psychopy.core.getTime()) / 5
                 )
 
         self._send(message)
