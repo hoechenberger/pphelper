@@ -23,9 +23,12 @@ setup(
     description='Different helper modules for analysis of psychophysics '
                 'experiments.',
     long_description=open('README.rst').read(),
-    install_requires=['sphinxcontrib-napoleon', 'psychopy >= 1.81.03',
-                      'pyfftw', 'pandas >= 0.14.1', 'matplotlib',
-                      'scipy', 'pillow', 'numpy >= 1.7.2'],
+    install_requires=['pandas','numpy'],
+    extras_require = {
+        'hardware':  ['psychopy', 'pylibnidaqmx'],
+        'image': ['pyfftw', 'scipy', 'matplotlib', 'pillow'],
+        'doc': ['sphinxcontrib-napoleon'],
+    },
     classifiers=['Intended Audience :: Science/Research',
                  'Programming Language :: Python',
                  'Topic :: Scientific/Engineering :: Bio-Informatics',
