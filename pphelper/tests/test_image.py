@@ -35,6 +35,6 @@ data_directory = 'pphelper/tests/data/'
 #     assert np.allclose(phase, phase_expected)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     import pytest
     pytest.main()

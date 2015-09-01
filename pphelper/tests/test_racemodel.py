@@ -446,7 +446,7 @@ def test_gen_percentiles():
     Test gen_percentiles().
     """
     assert np.allclose(gen_percentiles(10),
-                          np.array([ 0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95]))
+                       np.array([0.05,  0.15,  0.25,  0.35,  0.45,  0.55,  0.65,  0.75,  0.85,  0.95]))
 
     assert np.allclose(gen_percentiles(13),
                        np.array([0.03846154,  0.11538462,  0.19230769,  0.26923077,  0.34615385,
@@ -1499,6 +1499,66 @@ def test_gen_cdfs_from_dataframe():
     assert result.index.equals(result_expected.index)
 
 
-if __name__=='__main__':
+def test_get_percentiles_from_cdf_p():
+    rts = np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319])
+
+    cdf = gen_cdf(rts)
+    p = gen_percentiles(10)
+
+    result_expected = get_percentiles_from_cdf(cdf)
+    result = get_percentiles_from_cdf(cdf, p=p)
+
+    assert result.index.equals(result_expected.index)
+    assert result.equals(result_expected)
+
+
+def test_get_percentiles_from_cdf_num_p():
+    rts = np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319])
+
+    cdf = gen_cdf(rts)
+    num_p = 10
+
+    result_expected = get_percentiles_from_cdf(cdf)
+    result = get_percentiles_from_cdf(cdf, num_p=num_p)
+
+    assert result.index.equals(result_expected.index)
+    assert result.equals(result_expected)
+
+
+def test_get_percentiles_from_cdf_p_and_num_p():
+    """
+    `num_p` should be ignored if `p` is supplied.
+    """
+    rts = np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319])
+
+    cdf = gen_cdf(rts)
+    p = gen_percentiles(10)
+    num_p = 5
+
+    result_expected = get_percentiles_from_cdf(cdf, p=p)
+    result = get_percentiles_from_cdf(cdf, p=p, num_p=num_p)
+
+    assert result.index.equals(result_expected.index)
+    assert result.equals(result_expected)
+
+
+def test_get_percentiles_from_cdf_time_index():
+    rts = np.array([245, 246, 248, 250, 251, 252, 253, 254, 255, 259, 263, 265, 279, 282, 284, 319])
+
+    cdf_single_index = gen_cdf(rts)
+    cdf_multi_index = gen_cdf(rts)
+    multi_index = pd.MultiIndex.from_product(
+        [['Foo'], cdf_multi_index.index], names=['Foo', 'Time']
+    )
+    cdf_multi_index.index = multi_index
+
+    result_expected = get_percentiles_from_cdf(cdf_single_index)
+    result = get_percentiles_from_cdf(cdf_multi_index, time_index='Time')
+
+    assert result.index.equals(result_expected.index)
+    assert result.equals(result_expected)
+
+
+if __name__ == '__main__':
     import pytest
     pytest.main()

@@ -2,7 +2,17 @@
 Changelog
 =========
 ****************
-v0.5, 2015-XX-XX
+v0.6, 2015-xx-xx
+****************
+- Replace `onset_delay` parameter of `hardware` components with
+  `trigger_time`.
+- Add gustometer support.
+- MultiIndex support in `racemodel.get_percentiles_from_cdf()`
+- Switch to Travis-CI container-based infrastructure.
+- Fix readthedocs.org documentation creation.
+
+****************
+v0.5, 2015-08-17
 ****************
 - ``compare_*`` functions renamed to ``gen_*``.
 - ``get_cdf*`` functions renamed to ``get_percentiles*``.

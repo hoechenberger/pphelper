@@ -1,17 +1,36 @@
 language: python
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libatlas-base-dev
+      - gfortran
+      - libfftw3-3
+      - libfftw3-dev
+      - ccache
 
 python:
   # - "2.6"
   - "2.7"
   # - "3.3"
   # - "3.4"
+  
+cache:
+  - pip
+  - ccache
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install libatlas-base-dev gfortran libfftw3-3 libfftw3-dev
-
-install:
-  - pip install -r requirements.txt
-  - pip install .
+  - export PATH=/usr/lib/ccache:$PATH
+  - uname -a
+  - free -m
+  - df -h
+  - ulimit -a
+  - pip install --upgrade pip
+  - travis_retry pip install pillow numpy matplotlib
+  - travis_wait pip install scipy
+  - travis_retry pip install pandas
+  - travis_retry pip install --upgrade git+https://github.com/pearu/pylibnidaqmx.git
+  - travis_retry pip install --upgrade git+https://github.com/psychopy/psychopy.git@1.82.02rc1#egg=psychopy
 
 script: py.test

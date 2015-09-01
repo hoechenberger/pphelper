@@ -8,6 +8,7 @@ import nidaqmx
 import numpy as np
 import threading
 import psychopy.core
+import socket
 
 
 class _StimulationApparatus(object):
@@ -36,9 +37,6 @@ class _StimulationApparatus(object):
     def _stimulus_name_exists(self, name):
         return any([stimulus['name'] == name for stimulus in
                     self._stimuli])
-
-    def _stimulus_selected(self):
-        return False if self._stimulus is None else True
 
     def add_stimulus(self, **kwargs):
         """
@@ -243,7 +241,7 @@ class Olfactometer(_StimulationApparatus):
         del self
 
     def add_stimulus(self, name, bitmask, duration=1,
-                     bitmask_offset=None, onset_delay=0,
+                     bitmask_offset=None, trigger_time=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -262,12 +260,11 @@ class Olfactometer(_StimulationApparatus):
             The bitmask specifying the valve positions after the
             stimulation has finished. If not specified, all valves will be
             closed at the end of the stimulation.
-        onset_delay : float, optional
-            How long to wait after invocation of the ``stimulate``
-            method before actually sending the triggers.
-            This onset delay can for example be used to align the timing
-            of an olfactory stimulus with the onset of a visual stimulus on
-            a computer display, which operates at a fixed refresh rate.
+        trigger_time : float, optional
+            The time (in terms of the ``psychopy.core.getTime`` timebase)
+            at which the stimulation should be triggered. If ``None``,
+            trigger immediately.
+            Defaults to ``None``.
         replace : bool, optional
             Whether an already existing stimulus of the same name should
             be replaced or not. Defaults to ``False``.
@@ -280,25 +277,29 @@ class Olfactometer(_StimulationApparatus):
         See Also
         --------
         remove_stimulus
+        select_stimulus
         stimulate
 
         """
-        bitmask = np.array(bitmask)
+        bitmask = np.array(bitmask, dtype=np.uint8)
         if bitmask.shape[0] != self._ni_task_number_of_channels:
             raise ValueError('Shape of the bitmask does not match number '
                              'of physical lines.')
 
         if bitmask_offset is None:
-            bitmask_offset = np.zeros(self._ni_task_number_of_channels)
+            bitmask_offset = np.zeros(
+                self._ni_task_number_of_channels,
+                dtype=np.uint8
+            )
         else:
-            bitmask_offset = np.array(bitmask_offset)
+            bitmask_offset = np.array(bitmask_offset, dtype=np.uint8)
             if bitmask_offset.shape[0] != self._ni_task_number_of_channels:
                 raise ValueError('Please specify a valid bitmask_offset.')
 
         super(Olfactometer, self).add_stimulus(
             name=name, bitmask=bitmask, bitmask_offset=bitmask_offset,
-            duration=duration, onset_delay=onset_delay, replace=replace,
-            **kwargs
+            duration=duration, trigger_time=trigger_time,
+            replace=replace, **kwargs
         )
 
     def select_stimulus(self, name):
@@ -351,12 +352,16 @@ class Olfactometer(_StimulationApparatus):
 
         Notes
         -----
-        When using thrads, the thread object created by
-        ``select_stimulus`` is started when ``stimulate`` is invoked. It
-        has to be re-created by calling ``select_stimulus`` before
-        ``stimulate`` can be invoked again.
+        ``stimulate`` invokes ``_stimulate``, which itself unsets the
+        currently selected stimulus at the end of the stimulation. You have
+        to invoke ``select_stimulus`` again before you can call
+        ``stimulate`` again.
 
         """
+        if not self._stimulus:
+            raise ValueError('No stimulus selected. Please invoke '
+                             '``select_stimulus()`` first.')
+
         if self._use_threads:
             self._thread.start()
             if blocking_wait:
@@ -364,23 +369,18 @@ class Olfactometer(_StimulationApparatus):
         else:
             self._stimulate()
 
-        self._stimulus = None
-
     def _stimulate(self):
-        t0 = psychopy.core.getTime()
-
-        if not self._stimulus_selected():
-            raise ValueError('No stimulus selected. Please invoke '
-                             '``select_stimulus()`` first.')
-
         stimulus_duration = self._stimulus['duration']
-        onset_delay = self._stimulus['onset_delay']
         bitmask = self._stimulus['bitmask']
         bitmask_offset = self._stimulus['bitmask_offset']
+        trigger_time = self._stimulus['trigger_time']
 
-        if onset_delay > 0:
-            onset_wait = onset_delay - (psychopy.core.getTime() - t0)
-            psychopy.core.wait(onset_wait, hogCPUperiod=onset_wait/5)
+        if trigger_time is not None:
+            if psychopy.core.getTime() < trigger_time:
+                psychopy.core.wait(
+                    trigger_time - psychopy.core.getTime(),
+                    hogCPUperiod=(trigger_time - psychopy.core.getTime()) / 5
+                )
 
         if self._ni_task.write(bitmask) <= 0:
             raise IOError('Could not write onset bitmask.')
@@ -390,6 +390,8 @@ class Olfactometer(_StimulationApparatus):
 
         if self._ni_task.write(bitmask_offset) <= 0:
             raise IOError('Could not write offset bitmask.')
+
+        self._stimulus = None
 
 
 class AnalogInput(object):
@@ -552,129 +554,276 @@ class AnalogInput(object):
 
 
 class Gustometer(_StimulationApparatus):
-    pass
-    #     """
-    #     Provide an interface to the Burghart GU002 gustometer.
-    #
-    #     """
-    #     def __init__(self, cycle_duration,
-    #                  ni_trigger_out_line, ni_trigger_in_line,
-    #                  ni_trigger_out_task_name='GustometerOut',
-    #                  ni_trigger_in_task_name='GustometerIn',
-    #                  gusto_ip='192.168.0.1', gusto_port=40175,
-    #                  local_ip='192.168.0.10', local_port=40176):
-    #         """
-    #         Parameters
-    #         ----------
-    #         cycle_duration : float
-    #             The duration of one stimulation cycle, in seconds.
-    #
-    #         ni_trigger_out_line : string
-    #             The digital output line on the NI board which shall be used to
-    #             send the trigger to the gustometer.
-    #
-    #         ni_trigger_in_line : string
-    #             The digital input line on the NI board which shall be used to
-    #             receive the trigger pulse emitted by the gustometer as soon
-    #             presentation of the requested stimulus has actually started.
-    #
-    #         ni_trigger_out_task_name : string, optional
-    #             The name to assign to the trigger output task.
-    #             Defaults to ``GustometerOut``.
-    #
-    #         ni_trigger_in_task_name : string, optional
-    #             The name to assign to the trigger input task.
-    #             Defaults to ``GustometerIn``.
-    #
-    #         gusto_ip : string, optional
-    #             The IP address of the gustometer control computer.
-    #             Defaults to ``192.168.0.1``.
-    #
-    #         gusto_port : int, optional
-    #             The port on which the control software on the gustometer
-    #             control computer is listening for a connection. This should
-    #             usually not need to be changed.
-    #             Defaults to ``40175``.
-    #
-    #         local_ip : string, optional
-    #             The IP address of the computer running the experimental
-    #             scripts. This should be the address of the interface which is
-    #             connected to the gustometer control computer.
-    #             Defaults to ``192.168.0.10``.
-    #
-    #         local_port : string, optional
-    #             The port on which to listen for responses from the gustometer
-    #             control computer.
-    #             Defaults to ``40176``.
-    #
-    #         """
-    #         super(Gustometer, self).__init__()
-    #         self._cycle_duration = cycle_duration
-    #         self._gusto_ip = gusto_ip
-    #         self._gusto_port = gusto_port
-    #         self._local_ip = local_ip
-    #         self._local_port = local_port
-    #         self._timer = psychopy.core.Clock()
-    #         self._stimuli = list()
-    #         self._stimulus = None
-    #
-    #         # Initialize OUT trigger (FROM computer TO gusto).
-    #         # Sending this trigger will cause the gustometer to present the
-    #         # stimulus in the next pulse cycle.
-    #         self._ni_trigger_out_task = nidaqmx.DigitalOutputTask(
-    #             name=ni_trigger_out_task_name
-    #         )
-    #         self._ni_trigger_out_task.create_channel(ni_trigger_out_line)
-    #         self._ni_trigger_out_task.start()
-    #
-    #         # Initialize IN trigger (FROM gusto TO computer).
-    #         # The gustometer will send this trigger as soon as the stimulus
-    #         # presentation has started.
-    #         self._ni_trigger_in_task = nidaqmx.CounterInputTask(
-    #             name=ni_trigger_in_task_name
-    #         )
-    #         self._ni_trigger_in_task.create_channel_count_edges(
-    #             ni_trigger_in_line,
-    #             edge='rising',
-    #             direction='up',
-    #             init=0
-    #         )
-    #         self._ni_trigger_in_task.start()
-    #
-    #         # Initialize the network connection.
-    #         self._socket_send = socket.socket(socket.AF_INET,  # IP
-    #                                           socket.SOCK_DGRAM)  # UDP
-    #
-    #         self._socket_receive = socket.socket(socket.AF_INET,  # IP
-    #                                              socket.SOCK_DGRAM)  # UDP
-    #
-    #         self._socket_receive.bind([self._local_ip, self._local_port])
-    #         self._connect()
-    #
-    #     def _send(self, message):
-    #         self._socket_send.sendto(message, [self._gusto_ip,
-    #                                            self._gusto_port])
-    #
-    #     def _connect(self):
-    #         message = 'CONNECT %d 0' % self._local_ip
-    #         self._send(message)
-    #
-    #     def select_stimulus(self, name):
-    #         super(Gustometer, self).select_stimulus(name)
-    #         message = 'CLASSNUM %d 0' % self._stimulus['class']
-    #         self._send(message)
-    #
-    #     def add_stimulus(self):
-    #         pass
-    #
-    #     def trigger(self):
-    #         if not self._stimulus_selected():
-    #             raise ValueError('No stimulus selected. Please invoke '
-    #                              '``select_stimulus()`` first.')
-    #
-    #         self._ni_trigger_out_task.write(1)
-    #
-    #     # def trigger_conf(self, pulse_dur=300, pause_dur=70):
-    #     #     message = 'TRIGCONF %d %d %d %d' % (pulse_dur, pause_dur,
-    #     #                                         pulse_dur, pause_dur)
-    #     #     self._send(message)
+    """
+    Provide an interface to the Burghart GU002 gustometer.
+
+    """
+    def __init__(self, pulse_duration=0.1, pause_duration=0.2,
+                 gusto_ip='192.168.0.1', gusto_port=40175,
+                 local_ip='192.168.0.10', local_port=40176,
+                 ni_trigger_out_line='Dev1/PFI1',
+                 ni_trigger_in_line='Dev1/ctr0',
+                 ni_trigger_out_task_name='GustometerOut',
+                 ni_trigger_in_task_name='GustometerIn',
+                 use_threads=True):
+        """
+        Parameters
+        ----------
+        pulse_duration : float, optional
+            The duration of one stimulation pulse, in seconds.
+            Defaults to 0.1.
+        pause_duration : float, optional
+            The duration of the spray pause between two pulses in seconds.
+            Defaults to 0.2
+        gusto_ip : string, optional
+            The IP address of the gustometer control computer.
+            Defaults to ``192.168.0.1``.
+        gusto_port : int, optional
+            The port on which the control software on the gustometer
+            control computer is listening for a connection. This should
+            usually not need to be changed.
+            Defaults to ``40175``.
+        local_ip : string, optional
+            The IP address of the computer running the experimental
+            scripts. This should be the address of the interface which is
+            connected to the gustometer control computer.
+            Defaults to ``192.168.0.10``.
+        local_port : string, optional
+            The port on which to listen for responses from the gustometer
+            control computer.
+            Defaults to ``40176``.
+        ni_trigger_out_line : string
+            The digital output line on the NI board which shall be used to
+            send the trigger to the gustometer.
+        ni_trigger_in_line : string
+            The counter input line on the NI board which shall be used to
+            receive the trigger pulse emitted by the gustometer as soon
+            presentation of the requested stimulus has actually started.
+        ni_trigger_out_task_name : string, optional
+            The name to assign to the trigger output task.
+            Defaults to ``GustometerOut``.
+        ni_trigger_in_task_name : string, optional
+            The name to assign to the trigger input task.
+            Defaults to ``GustometerIn``.
+        use_threads : bool, optional
+            Whether a Python thread should be created when
+            `select_stimulus` is called. This thread would then allow
+            non-blocking stimulation.
+            Defaults to ``True``.
+
+        """
+        super(Gustometer, self).__init__()
+        self._pulse_duration = pulse_duration
+        self._pause_duration = pause_duration
+        self._classfile = None
+        self._gusto_ip = gusto_ip
+        self._gusto_port = gusto_port
+        self._local_ip = local_ip
+        self._local_port = local_port
+        self._use_threads = use_threads
+        self._thread = None
+
+        # Initialize OUT trigger (FROM computer TO gusto).
+        # Sending this trigger will cause the gustometer to present the
+        # stimulus in the next pulse cycle.
+        self._ni_trigger_out_task = nidaqmx.DigitalOutputTask(
+            name=ni_trigger_out_task_name
+        )
+        self._ni_trigger_out_task.create_channel(ni_trigger_out_line)
+        self._ni_trigger_out_task.start()
+
+        # Initialize IN trigger (FROM gusto TO computer).
+        # The gustometer will send this trigger as soon as the stimulus
+        # presentation has started.
+        self._ni_trigger_in_task = nidaqmx.CounterInputTask(
+            name=ni_trigger_in_task_name
+        )
+        self._ni_trigger_in_task.create_channel_count_edges(
+            ni_trigger_in_line,
+            edge='rising',
+            direction='up',
+            init=0
+        )
+        self._ni_trigger_in_task.start()
+
+        # Initialize the network connection.
+        self._socket_send = socket.socket(socket.AF_INET,  # IP
+                                          socket.SOCK_DGRAM)  # UDP
+
+        self._socket_receive = socket.socket(socket.AF_INET,  # IP
+                                             socket.SOCK_DGRAM)  # UDP
+
+        self._socket_receive.bind((self._local_ip, self._local_port))
+        self._socket_receive.settimeout(0.1)
+        self._connect()
+
+    def _send(self, message):
+        self._socket_send.sendto(message, (self._gusto_ip,
+                                           self._gusto_port))
+
+    def _connect(self):
+        message = 'CONNECT %s 0' % self._local_port
+
+        # # Empty receive buffer.
+        # self._socket_receive.setblocking(False)
+        # for ............
+
+        self._send(message)
+
+    def trigger_conf(self, duration=0.9, int_taste=100, int_bg=100):
+        """
+        Configure the trigger on the gusto.
+
+        Parameters
+        ----------
+        duration : int, optional
+            Trigger duration (stimulation duration) in seconds.
+            Defaults to 0.9s.
+        int_taste : int
+            Taste intensity in percent.
+            Defaults to 100%.
+        int_bg : int
+            Background intensity in percent.
+            Defaults to 100%.
+
+        """
+        message = 'TRIGCONF %d %d %d' % (duration * 1000,
+                                         int_taste, int_bg)
+        self._send(message)
+
+    def load_classfile(self, filename):
+        """
+        Load a classes file in the Gusto Control software.
+
+        Parameters
+        ----------
+        filename : string
+            The filename of the classes file to be loaded, including the
+            file extension (typically `.cla`).
+
+        """
+        message = 'CLASSFILE %s' % filename
+        self._send(message)
+        self._classfile = filename
+
+    def add_stimulus(self, name, classnum, trigger_time=None,
+                     replace=False, **kwargs):
+        """
+        Add a stimulus to the stimulus set of this apparatus.
+
+        Parameters
+        ----------
+        name : string
+            A unique identifier of the stimulus to add.
+        classnum : int
+            The stimulus class number, as defined in the Gusto Control
+            software.
+        trigger_time : float, optional
+            The time (in terms of the ``psychopy.core.getTime`` timebase)
+            at which the stimulation should be triggered. If ``None``,
+            trigger immediately.
+            Defaults to ``None``.
+        replace : bool, optional
+            Whether an already existing stimulus of the same name should
+            be replaced or not. Defaults to ``False``.
+
+        Notes
+        -----
+        Any additional keyword arguments will be added as additional
+        stimulus properties.
+
+        See Also
+        --------
+        select_stimulus
+        remove_stimulus
+        stimulate
+
+        """
+        classnum = np.uint8(classnum)
+        super(Gustometer, self).add_stimulus(
+            name=name, classnum=classnum,
+            trigger_time=trigger_time, replace=replace, **kwargs
+        )
+
+    def select_stimulus(self, name):
+        """
+        Select the specified stimulus for the next stimulation.
+
+        Parameters
+        ----------
+        name : string
+            The unique name of the stimulus to select.
+
+        """
+        super(Gustometer, self).select_stimulus(name)
+        message = 'CLASSNUM %d 0' % self._stimulus['classnum']
+        self._send(message)
+
+        if self._use_threads:
+            self._thread = threading.Thread(target=self._stimulate)
+
+    def stimulate(self, blocking_wait=False):
+        """
+        Start the stimulation with the currently selected stimulus.
+
+        The trigger pulse will open the valves. They are then left open for
+        the intended duration of the stimulus. After that, they will be
+        switched to the offset state specified by the stimulus.
+
+        Parameters
+        ----------
+        blocking_wait : bool, optional
+            Specifies whether the stimulation thread should be `joined` or
+            not, i.e. whether we should wait for it to finish (blocking
+            other operations), or return immediately. This parameter will
+            be ignored if threads are not used for stimulation.
+            Defaults to `False`, i.e. non-blocking behavior.
+
+        See Also
+        --------
+        add_stimulus
+        select_stimulus
+
+        Notes
+        -----
+        ``stimulate`` invokes ``_stimulate``, which itself unsets the
+        currently selected stimulus at the end of the stimulation. You have
+        to invoke ``select_stimulus`` again before you can call
+        ``stimulate`` again.
+        """
+        if not self._stimulus:
+            raise ValueError('No stimulus selected. Please invoke '
+                             '``select_stimulus()`` first.')
+
+        if self._use_threads:
+            self._thread.start()
+            if blocking_wait:
+                self._thread.join()
+        else:
+            self._stimulate()
+
+    def _stimulate(self):
+        # # Set trigger line to HIGH.
+        # if self._ni_task.write(self._ni_trigger_out_task.write(1)) <= 0:
+        #     raise IOError('Could not write send trigger.')
+        #
+        # psychopy.core.wait(0.010)
+        #
+        # # Set trigger line to LOW again.
+        # if self._ni_task.write(self._ni_trigger_out_task.write(0)) <= 0:
+        #     raise IOError('Could not write send trigger.')
+
+        message = 'TRIGSTART 1 1'
+        trigger_time = self._stimulus['trigger_time']
+
+        if trigger_time is not None:
+            if psychopy.core.getTime() < trigger_time:
+                psychopy.core.wait(
+                    trigger_time - psychopy.core.getTime(),
+                    hogCPUperiod=(
+                                 trigger_time - psychopy.core.getTime()) / 5
+                )
+
+        self._send(message)
+        self._stimulus = None
+

@@ -2,7 +2,7 @@
 
 from __future__ import division
 import numpy as np
-from pphelper.sdt import d_prime, criterion
+from pphelper.sdt import d_prime, a_prime, criterion
 
 
 def test_d_prime():
@@ -61,7 +61,7 @@ def test_a_prime():
     n = 25
 
     result_expected = 0.79166666666666674
-    result = d_prime(hits, fas, n)
+    result = a_prime(hits, fas, n)
     assert np.allclose(result, result_expected)
 
 
@@ -85,6 +85,6 @@ def test_criterion_strict():
     assert np.allclose(result, result_expected)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     import pytest
     pytest.main()
