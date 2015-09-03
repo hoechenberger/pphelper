@@ -43,3 +43,13 @@ Some utilities that make data handling a bit easier.
 
 .. |travis-ci| image:: https://secure.travis-ci.org/hoechenberger/pphelper.png?branch=master
 .. _travis-ci: https://travis-ci.org/hoechenberger/pphelper
+
+.. |travis-ci| image:: https://secure.travis-ci.org/hoechenberger/pphelper.png?branch=master
+    :alt: Build Status
+    :scale: 100%
+    :target: https://travis-ci.org/hoechenberger/pphelper
+
+.. |readthedocs| image:: https://readthedocs.org/projects/pphelper/badge/?version=latest
+    :alt: Documentation Status
+    :scale: 100%
+    :target: https://readthedocs.org/projects/pphelper

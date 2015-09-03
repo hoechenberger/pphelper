@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-pphelper.image
-==================
-
-Provides
---------
- - ``fft_image`` : Perform an FFT on the supplied image array.
- - ``lowpass_filter_image`` : Load an image from a file, and low-pass
-                              filter via a Gaussian kernel.
+Some basic image processing routines.
 
 """
 

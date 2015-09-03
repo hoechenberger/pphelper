@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Some functions that come in handy when working with psychophysics
-datasets.
+Signal detection theory calculations.
 
-Provides
---------
- - ``d_prime`` : Calculate the sensitivity index d' ("d-prime").
- - ``criterion`` : Calculate the decision criterion C.
 """
 
 from __future__ import division, unicode_literals
@@ -17,7 +12,7 @@ import numpy as np
 
 def d_prime(hits, false_alarms, n, nafc=1):
     """
-    Calculate the sensitivity index d' ("d-prime").
+    Calculate the sensitivity index d'.
 
     Parameters
     ----------

@@ -6,14 +6,6 @@ and Schröter (2007): 'Testing the race model inequality: An algorithm
 and computer programs', published in Behavior Research Methods 39 (2),
 pp. 291-302.
 
-Provides
---------
- - ``gen_cdf`` : Estimate the cumulative distribution function from response time data.
- - ``gen_cdfs_from_list`` : Convenience function: Applys ``gen_cdf`` to a list of data sets.
- - ``gen_percentiles`` : Calculate equally spaced percentiles values.
- - ``get_percentiles_from_cdf`` : Get the values (response times) of a cumulative distribution function at the specified percentiles.
- - ``gen_step_fun`` : Generate a step function from a set of observed response times.
-
 """
 
 from __future__ import division, unicode_literals

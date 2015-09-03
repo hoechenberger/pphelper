@@ -2,6 +2,7 @@ About pphelper
 ==============
 
 .. automodule:: pphelper
-    :members:
-    :undoc-members:
-    :inherited-members:
+    :no-members:
+    :no-undoc-members:
+    :no-inherited-members:
+    :no-show-inheritance:

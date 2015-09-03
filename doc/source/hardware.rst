@@ -1,9 +1,21 @@
 The ``hardware`` Module
 =======================
+.. currentmodule:: pphelper.hardware
+.. autosummary::
+   :nosignatures:
 
-.. toctree::
-   :maxdepth: 1
+   Olfactometer
+   Gustometer
+   AnalogInput
 
-   olfactometer
-   analoginput
-   gustometer
+Olfactometer
+------------
+.. autoclass:: pphelper.hardware.Olfactometer
+
+Gustometer
+----------
+.. autoclass:: pphelper.hardware.Gustometer
+
+AnalogInput
+-----------
+.. autoclass:: pphelper.hardware.AnalogInput

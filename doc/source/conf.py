@@ -63,12 +63,24 @@ sys.path.insert(0, os.path.abspath('../../pphelper'))
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     # 'sphinx.ext.doctest',
     # 'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     # 'numpydoc',
     'sphinxcontrib.napoleon',
 ]
+
+autodoc_default_flags = [
+    'members',
+    'undoc-members',
+    'inherited-members',
+    'show-inheritance'
+]
+
+# Also document __init__() methods.
+autoclass_content = 'both'
+autodoc_member_order = 'source'
 
 # Napoleon settings
 napoleon_include_special_with_doc = False
@@ -94,7 +106,7 @@ copyright = u'2014, Richard Höchenberger'
 # built documents.
 #
 
-import pphelper
+# import pphelper
 # Ger version info.
 # This basically imports __version__ from version.py.
 exec(open('../../pphelper/version.py').read())
