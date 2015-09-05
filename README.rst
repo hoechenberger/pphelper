@@ -1,4 +1,4 @@
-|travis-ci|_
+|travis-ci| |rtd-latest| |rtd-stable|
 
 
 ========
@@ -49,7 +49,8 @@ Some utilities that make data handling a bit easier.
     :scale: 100%
     :target: https://travis-ci.org/hoechenberger/pphelper
 
-.. |readthedocs| image:: https://readthedocs.org/projects/pphelper/badge/?version=latest
+.. |rtd-latest| image:: https://readthedocs.org/projects/pphelper/badge/?version=latest
     :alt: Documentation Status
     :scale: 100%
     :target: https://readthedocs.org/projects/pphelper
+
