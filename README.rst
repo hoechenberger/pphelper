@@ -1,4 +1,4 @@
-|travis-ci| |rtd-latest| |rtd-stable|
+|travis-ci| |rtd-latest|
 
 
 ========
