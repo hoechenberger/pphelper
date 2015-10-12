@@ -6,12 +6,13 @@
 Welcome to pphelper's documentation!
 ====================================
 .. Contents:
+
 .. toctree::
    :maxdepth: 1
 
    about
+   hardware
    racemodel
    sdt
-   hardware
    image
    utils

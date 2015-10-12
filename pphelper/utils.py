@@ -4,10 +4,6 @@
 Some functions that come in handy when working with psychophysics
 datasets.
 
-Provides
---------
- - ``add_zero_padding`` : Convert numbers (typically participant IDs) to strings of specific length, with leading zeros where necessary.
- - ``get_max_from_list`` : Return the maximum value from a list or a list of lists.
 """
 
 from __future__ import division, unicode_literals

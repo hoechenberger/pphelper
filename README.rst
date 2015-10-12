@@ -1,4 +1,4 @@
-|travis-ci|_
+|travis-ci| |rtd-latest| |rtd-stable|
 
 
 ========
@@ -7,6 +7,8 @@ pphelper
 
 ``pphelper`` is a collection of tools I use for acquisition and
 analysis of psychophysical data in our laboratory.
+
+Please find the full documentation at http://pphelper.readthedocs.org
 
 *******
 Modules
@@ -43,3 +45,14 @@ Some utilities that make data handling a bit easier.
 
 .. |travis-ci| image:: https://secure.travis-ci.org/hoechenberger/pphelper.png?branch=master
 .. _travis-ci: https://travis-ci.org/hoechenberger/pphelper
+
+.. |travis-ci| image:: https://secure.travis-ci.org/hoechenberger/pphelper.png?branch=master
+    :alt: Build Status
+    :scale: 100%
+    :target: https://travis-ci.org/hoechenberger/pphelper
+
+.. |rtd-latest| image:: https://readthedocs.org/projects/pphelper/badge/?version=latest
+    :alt: Documentation Status
+    :scale: 100%
+    :target: https://readthedocs.org/projects/pphelper
+

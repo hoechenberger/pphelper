@@ -15,4 +15,4 @@ except ImportError:
     print('Problem importing the hardware module, skipping.\n'
           'Please check if PyLibNIDAQmx is installed.')
 
-__all__ = ['racemodel', 'sdt', 'hardware', 'utils', 'image']
+__all__ = ['racemodel', 'hardware', 'image', 'sdt', 'utils']
