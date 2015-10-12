@@ -8,6 +8,8 @@ pphelper
 ``pphelper`` is a collection of tools I use for acquisition and
 analysis of psychophysical data in our laboratory.
 
+Please find the full documentation at http://pphelper.readthedocs.org
+
 *******
 Modules
 *******
