@@ -1,4 +1,4 @@
-|travis-ci| |rtd-latest|
+|travis-ci| |rtd-latest| |coveralls|
 
 
 ========
@@ -56,3 +56,8 @@ Some utilities that make data handling a bit easier.
     :scale: 100%
     :target: https://readthedocs.org/projects/pphelper
 
+
+.. |coveralls| image:: https://coveralls.io/repos/hoechenberger/pphelper/badge.svg?branch=master&service=github
+    :alt: Test Coverage Status
+    :scale: 100%
+    :target: https://coveralls.io/github/hoechenberger/pphelper?branch=master

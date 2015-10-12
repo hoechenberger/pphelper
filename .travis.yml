@@ -34,3 +34,5 @@ before_install:
   - travis_retry pip install --upgrade git+https://github.com/psychopy/psychopy.git@1.82.02rc1#egg=psychopy
 
 script: py.test
+
+after_success: coveralls
