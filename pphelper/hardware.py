@@ -657,6 +657,13 @@ class Gustometer(_StimulationApparatus):
         self._socket_receive.settimeout(0.1)
         self._connect()
 
+    def __del__(self):
+        self._ni_trigger_in_task.clear()
+        self._ni_trigger_out_task.clear()
+        self._socket_receive.close()
+        self._socket_send.close()
+        del self
+
     def _send(self, message):
         self._socket_send.sendto(message, (self._gusto_ip,
                                            self._gusto_port))
