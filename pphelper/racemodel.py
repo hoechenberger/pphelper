@@ -112,7 +112,7 @@ def gen_cdf(rts, t_max=None):
     # with the 'maximum' method (i.e. in the case of ties, all ties
     # will receive the highest possible rank), select all unique ranks,
     # and use these to calculate the plotting positions.
-    rts_sorted = rts.order()
+    rts_sorted = rts.sort_values(inplace=False)
     p = np.unique(rankdata(rts_sorted, method='max')) / len(rts_sorted)
 
     # rts_unique are the x values corresponding to our plotting positions.
@@ -406,7 +406,7 @@ def gen_cdfs_from_dataframe(data, rt_column='RT',
 
     """
     if names is None:
-        names = data[modality_column].sort(inplace=False).unique()
+        names = data[modality_column].sort_values(inplace=False).unique()
 
     if not data[modality_column].isin(names).all():
         raise AssertionError('Could not find specified data.')
