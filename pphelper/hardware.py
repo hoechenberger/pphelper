@@ -686,10 +686,10 @@ class Gustometer(_StimulationApparatus):
         duration : int, optional
             Trigger duration (stimulation duration) in seconds.
             Defaults to 0.9s.
-        int_taste : int
+        int_taste : int, optional
             Taste intensity in percent.
             Defaults to 100%.
-        int_bg : int
+        int_bg : int, optional
             Background intensity in percent.
             Defaults to 100%.
 
@@ -833,4 +833,3 @@ class Gustometer(_StimulationApparatus):
 
         self._send(message)
         self._stimulus = None
-
