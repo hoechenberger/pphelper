@@ -833,3 +833,200 @@ class Gustometer(_StimulationApparatus):
 
         self._send(message)
         self._stimulus = None
+
+
+class Trigger(_StimulationApparatus):
+    """
+    Send triggers, e.g. to the EEG system.
+
+    """
+    def __init__(self, ni_lines='Dev1/PFI2:9',
+                 ni_start_trigger_line=None,
+                 ni_task_name='Triggers',
+                 use_threads=True):
+        """
+        Parameters
+        ----------
+        ni_lines : string, optional
+            The lines of the NI board to use as output channel.
+            Defaults to ``Dev1/PFI2:9``.
+        ni_start_trigger_line : str or None, optional
+            If specified, start the generation only after a start trigger
+            (high voltage) on this digital line has been received.
+            If `None`, no external trigger is required.
+        ni_task_name : string, optional
+            The name of the NI DAQ task to create.
+            Defaults to ``EegTriggers``.
+        use_threads : bool, optional
+            Whether a Python thread should be created when
+            `select_stimulus` is called. This thread would then allow
+            non-blocking stimulation.
+            Defaults to ``True``.
+
+        """
+        super(Trigger, self).__init__()
+        self._ni_task = nidaqmx.DigitalOutputTask(name=ni_task_name)
+
+        # Add the trigger channels.
+        if not self._ni_task.create_channel(ni_lines):
+            raise IOError('Could not create digital output task.')
+
+        self._ni_task_number_of_channels = \
+            self._ni_task.get_number_of_channels()
+
+
+        # if not self._ni_task.configure_timing_sample_clock(
+        #         rate=self._sampling_rate,
+        #         sample_mode='finite',
+        #         samples_per_channel=self._samples_to_acquire):
+        #     raise IOError('Could not configure analog input sample clock.')
+
+        if ni_start_trigger_line is not None:
+            if not self._ni_task.configure_trigger_digital_edge_start(
+                    ni_start_trigger_line):
+                raise IOError('Could not configure trigger channel.')
+
+            # Data generation is set to be triggered by an external
+            # trigger. Thus we can start the task immediately.
+            if not self._ni_task.start():
+                raise IOError('Could not start digital output task.')
+
+        self._use_threads = use_threads
+        self._thread = None
+
+    def __del__(self):
+        self._ni_task.clear()
+        del self
+
+    def add_trigger(self, *args, **kwargs):
+        self.add_stimulus(*args, **kwargs)
+
+    def add_stimulus(self, name, bitmask, duration=1,
+                     bitmask_offset=None, trigger_time=None,
+                     replace=False, **kwargs):
+        """
+        Add a stimulus to the stimulus set of this apparatus.
+
+        Parameters
+        ----------
+        name : string
+            A unique identifier of the stimulus to add.
+        bitmask : array_like
+            The bitmask specifying the valve positions required to present
+            this stimulus.
+        duration : float, optional
+            The duration of the stimulation, specified in seconds.
+            Defaults to 1 second.
+        trigger_time : float, optional
+            The time (in terms of the ``psychopy.core.getTime`` timebase)
+            at which the stimulation should be triggered. If ``None``,
+            trigger immediately.
+            Defaults to ``None``.
+        replace : bool, optional
+            Whether an already existing stimulus of the same name should
+            be replaced or not. Defaults to ``False``.
+
+        Notes
+        -----
+        Any additional keyword arguments will be added as additional
+        stimulus properties.
+
+        See Also
+        --------
+        remove_stimulus
+        select_stimulus
+        stimulate
+
+        """
+        bitmask = np.array(bitmask, dtype=np.uint8)
+        if bitmask.shape[0] != self._ni_task_number_of_channels:
+            raise ValueError('Shape of the bitmask does not match number '
+                             'of physical lines.')
+
+        super(Trigger, self).add_stimulus(
+                name=name, bitmask=bitmask, duration=duration,
+                trigger_time=trigger_time, replace=replace, **kwargs
+        )
+
+    def select_trigger(self, name):
+        self.select_stimulus(name)
+
+    def select_stimulus(self, name):
+        """
+        Select the specified trigger for the next generation.
+
+        Parameters
+        ----------
+        name : string
+            The unique name of the trigger to select.
+
+        """
+        super(Trigger, self).select_stimulus(name)
+
+        if self._use_threads:
+            self._thread = threading.Thread(target=self._stimulate)
+
+    def remove_trigger(self, name):
+        self.remove_stimulus(name)
+
+    def trigger(self, blocking_wait=False):
+        self.stimulate(blocking_wait=blocking_wait)
+
+    def stimulate(self, blocking_wait=False):
+        """
+        Start the generation of the currently selected trigger.
+
+        Parameters
+        ----------
+        blocking_wait : bool, optional
+            Specifies whether the trigger thread should be `joined` or
+            not, i.e. whether we should wait for it to finish (blocking
+            other operations), or return immediately. This parameter will
+            be ignored if threads are not used for stimulation.
+            Defaults to `False`, i.e. non-blocking behavior.
+
+        See Also
+        --------
+        add_trigger
+        select_trigger
+        add_stimulus
+        select_stimulus
+
+        Notes
+        -----
+        ``trigger`` invokes ``_trigger``, which itself unsets the
+        currently selected trigger at the end of the generation. You have
+        to invoke ``select_trigger`` again before you can call
+        ``trigger`` again.
+
+        """
+        if not self._stimulus:
+            raise ValueError('No stimulus selected. Please invoke '
+                             '``select_stimulus()`` first.')
+
+        if self._use_threads:
+            self._thread.start()
+            if blocking_wait:
+                self._thread.join()
+        else:
+            self._stimulate()
+
+    def _stimulate(self):
+        stimulus_duration = self._stimulus['duration']
+        bitmask = self._stimulus['bitmask']
+        trigger_time = self._stimulus['trigger_time']
+
+        if trigger_time is not None:
+            if psychopy.core.getTime() < trigger_time:
+                psychopy.core.wait(
+                        trigger_time - psychopy.core.getTime(),
+                        hogCPUperiod=(trigger_time - psychopy.core.getTime()) / 5
+                )
+
+        if self._ni_task.write(bitmask) <= 0:
+            raise IOError('Could not write onset bitmask.')
+
+        psychopy.core.wait(stimulus_duration,
+                           hogCPUperiod=stimulus_duration/5)
+
+        self._stimulus = None
