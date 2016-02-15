@@ -120,6 +120,14 @@ def gen_cdf(rts, t_max=None):
     rt_min = rts_unique.min()
     rt_max = rts_unique.max()
 
+    if len(rts_unique) == 1:
+        raise ValueError('Only one unique RT in this dataset! Cannot '
+                         'calculate CDF.')
+
+    if len(rts_unique) < 10:
+        warnings.warn('Found only %i unique RTs in dataset. Please check if '
+                      'this is really what you want.' % len(rts_unique))
+
     # We now calculate the midpoints of the initial plotting positions
     # to use as _new_ plotting positions.
     #
