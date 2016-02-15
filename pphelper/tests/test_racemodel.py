@@ -3,11 +3,12 @@
 from __future__ import division
 import numpy as np
 import pandas as pd
+import warnings
 
-from pphelper.racemodel import gen_step_fun, gen_cdf,\
-                               gen_percentiles, get_percentiles_from_cdf,\
-                               gen_cdfs_from_list, sum_cdfs, \
-                               gen_cdfs_from_dataframe
+from pphelper.racemodel import (gen_step_fun, gen_cdf,
+                                gen_percentiles, get_percentiles_from_cdf,
+                                gen_cdfs_from_list, sum_cdfs,
+                                gen_cdfs_from_dataframe)
 
 
 def test_gen_step_fun_ordered():
@@ -435,10 +436,32 @@ def test_gen_cdf_negative_rt():
                       254, 256, 259, 270, -5, 280])
 
     result_expected = gen_cdf(rt_a)
-    result = gen_cdf(rt_b)
+    with warnings.catch_warnings(record=True) as w:
+        result = gen_cdf(rt_b)
+        assert w
 
     assert result.equals(result_expected)
     assert result.index.equals(result_expected.index)
+
+
+def test_gen_cdf_only_one_rt():
+    rt = np.array([100])
+
+    try:
+        gen_cdf(rt)
+        did_raise = False
+    except ValueError:
+        did_raise = True
+
+    assert did_raise
+
+
+def test_gen_cdf_less_than_10_rts():
+    rt = np.array([100, 200, 300, 400])
+
+    with warnings.catch_warnings(record=True) as w:
+        gen_cdf(rt)
+        assert w
 
 
 def test_gen_percentiles():
