@@ -3,7 +3,8 @@
 from __future__ import unicode_literals
 import numpy as np
 import pandas as pd
-from pphelper.utils import add_zero_padding, get_max_from_list
+from pphelper.utils import (add_zero_padding, get_max_from_list,
+                            join_multi_level_index)
 
 
 def test_add_zero_padding_no_args():
@@ -47,6 +48,22 @@ def test_get_max_from_list():
 
     assert result == result_expected
 
+
+def test_join_multi_level_index():
+    idx = pd.MultiIndex.from_arrays(
+        [['foo_1', 'bar_1', 'baz_1'],
+         ['foo_2', 'bar_2', 'baz_2'],
+         ['foo_3', 'bar_3', 'baz_3']],
+        names=['idx_1', 'idx_2', 'idx_3']
+    )
+
+    result_expected = ['foo_1-foo_2-foo_3',
+                       'bar_1-bar_2-bar_3',
+                       'baz_1-baz_2-baz_3']
+
+    result = join_multi_level_index(idx, sep='-')
+
+    assert result == result_expected
 
 if __name__ == '__main__':
     import pytest

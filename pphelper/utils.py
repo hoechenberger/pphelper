@@ -70,3 +70,22 @@ def get_max_from_list(x):
 
     """
     return np.array(list(itertools.chain.from_iterable(x))).max()
+
+
+def join_multi_level_index(index, sep='_'):
+    """
+
+    Parameters
+    ----------
+    index : MultiIndex
+        The index to join.
+
+    sep : string, optional
+        The separator to insert between the joined index.
+        Defaults to an underscore (`_`).
+
+    Returns
+    -------
+    The joined index.
+    """
+    return [sep.join(x) for x in index]
