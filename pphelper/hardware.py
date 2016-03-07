@@ -856,7 +856,7 @@ class Trigger(_StimulationApparatus):
             If `None`, no external trigger is required.
         ni_task_name : string, optional
             The name of the NI DAQ task to create.
-            Defaults to ``EegTriggers``.
+            Defaults to ``Triggers``.
         use_threads : bool, optional
             Whether a Python thread should be created when
             `select_stimulus` is called. This thread would then allow
