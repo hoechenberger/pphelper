@@ -7,6 +7,7 @@ The ``hardware`` Module
    Olfactometer
    Gustometer
    AnalogInput
+   Trigger
 
 Olfactometer
 ------------
@@ -19,3 +20,7 @@ Gustometer
 AnalogInput
 -----------
 .. autoclass:: pphelper.hardware.AnalogInput
+
+Trigger
+-----------
+.. autoclass:: pphelper.hardware.Trigger
