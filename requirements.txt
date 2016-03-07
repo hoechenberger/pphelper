@@ -6,5 +6,5 @@ scipy
 pyfftw
 git+https://github.com/pearu/pylibnidaqmx.git
 git+https://github.com/psychopy/psychopy.git@1.82.02rc1#egg=psychopy
-sphinxcontrib-napoleon
+sphinx >= 1.3.0
 -e .

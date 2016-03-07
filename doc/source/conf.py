@@ -68,7 +68,7 @@ extensions = [
     # 'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     # 'numpydoc',
-    'sphinxcontrib.napoleon',
+    'sphinx.ext.napoleon',
 ]
 
 autodoc_default_flags = [

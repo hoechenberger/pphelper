@@ -27,7 +27,7 @@ setup(
     extras_require = {
         'hardware':  ['psychopy', 'pylibnidaqmx'],
         'image': ['pyfftw', 'scipy', 'matplotlib', 'pillow'],
-        'doc': ['sphinxcontrib-napoleon'],
+        'doc': ['sphinx'],
     },
     classifiers=['Intended Audience :: Science/Research',
                  'Programming Language :: Python',
