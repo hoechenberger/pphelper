@@ -1,3 +1,3 @@
-sphinxcontrib-napoleon
+sphinx >= 1.3.0
 psychopy
 -e .
