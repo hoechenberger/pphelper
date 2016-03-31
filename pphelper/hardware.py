@@ -19,12 +19,14 @@ class _StimulationApparatus(object):
     ----------
     stimulus : dict
     stimuli : list of dicts
+    test_mode : bool
 
     """
-    def __init__(self):
+    def __init__(self, test_mode=False):
         super(_StimulationApparatus, self).__init__()
         self._stimuli = list()
         self._stimulus = None
+        self._test_mode = test_mode
 
     @staticmethod
     def _create_stimulus_from_kwargs(**kwargs):
@@ -169,6 +171,10 @@ class _StimulationApparatus(object):
         """
         return self._stimuli
 
+    @property
+    def test_mode(self):
+        return self._test_mode
+
     @stimuli.deleter
     def stimuli(self):
         del self.stimulus
@@ -184,7 +190,8 @@ class Olfactometer(_StimulationApparatus):
     def __init__(self, ni_lines='Dev1/port0/line0:7',
                  ni_trigger_line=None,
                  ni_task_name='Olfactometer',
-                 use_threads=True):
+                 use_threads=True,
+                 test_mode=False):
         """
         Parameters
         ----------
@@ -203,41 +210,52 @@ class Olfactometer(_StimulationApparatus):
             `select_stimulus` is called. This thread would then allow
             non-blocking stimulation.
             Defaults to ``True``.
+        test_mode : bool, optional
+            If ``True``, the NI board will not actually be initialized or used
+            in any manner. This allows for testing the program logic on a
+            computer without a DAQ card.
+            Defaults to ``False``.
 
         """
-        super(Olfactometer, self).__init__()
-        self._ni_task = nidaqmx.DigitalOutputTask(name=ni_task_name)
+        super(Olfactometer, self).__init__(test_mode=test_mode)
 
-        # Add the stimulation channels.
-        if not self._ni_task.create_channel(ni_lines):
-            raise IOError('Could not create digital output task.')
+        if not self.test_mode:
+            self._ni_task = nidaqmx.DigitalOutputTask(name=ni_task_name)
 
-        self._ni_task_number_of_channels = \
-            self._ni_task.get_number_of_channels()
-
-        # Add the trigger channel, if any.
-        if ni_trigger_line is None:
-            self._ni_task_number_of_trigger_channels = 0
-        else:
-            if not self._ni_task.create_channel(ni_trigger_line):
+            # Add the stimulation channels.
+            if not self._ni_task.create_channel(ni_lines):
                 raise IOError('Could not create digital output task.')
 
-            # To get the total number of trigger channels, we subtract
-            # the number of channels BEFORE adding the trigger channels
-            # from the number of channels AFTER adding the trigger
-            # channels.
-            self._ni_task_number_of_trigger_channels = \
-                self._ni_task.get_number_of_channels() - \
-                self._ni_task_number_of_channels
+            self._ni_task_number_of_channels = \
+                self._ni_task.get_number_of_channels()
 
-        if not self._ni_task.start():
-            raise IOError('Could not start digital output task.')
+            # Add the trigger channel, if any.
+            if ni_trigger_line is None:
+                self._ni_task_number_of_trigger_channels = 0
+            else:
+                if not self._ni_task.create_channel(ni_trigger_line):
+                    raise IOError('Could not create digital output task.')
+
+                # To get the total number of trigger channels, we subtract
+                # the number of channels BEFORE adding the trigger channels
+                # from the number of channels AFTER adding the trigger
+                # channels.
+                self._ni_task_number_of_trigger_channels = \
+                    self._ni_task.get_number_of_channels() - \
+                    self._ni_task_number_of_channels
+
+            if not self._ni_task.start():
+                raise IOError('Could not start digital output task.')
+        else:
+            self._ni_task_number_of_channels = 8
+            self._ni_task_number_of_trigger_channels = 1
 
         self._use_threads = use_threads
         self._thread = None
 
     def __del__(self):
-        self._ni_task.clear()
+        if not self.test_mode:
+            self._ni_task.clear()
         del self
 
     def add_stimulus(self, name, bitmask, duration=1,
@@ -382,14 +400,16 @@ class Olfactometer(_StimulationApparatus):
                     hogCPUperiod=(trigger_time - psychopy.core.getTime()) / 5
                 )
 
-        if self._ni_task.write(bitmask) <= 0:
-            raise IOError('Could not write onset bitmask.')
+        if not self.test_mode:
+            if self._ni_task.write(bitmask) <= 0:
+                raise IOError('Could not write onset bitmask.')
 
         psychopy.core.wait(stimulus_duration,
                            hogCPUperiod=stimulus_duration/5)
 
-        if self._ni_task.write(bitmask_offset) <= 0:
-            raise IOError('Could not write offset bitmask.')
+        if not self.test_mode:
+            if self._ni_task.write(bitmask_offset) <= 0:
+                raise IOError('Could not write offset bitmask.')
 
         self._stimulus = None
 
@@ -561,11 +581,10 @@ class Gustometer(_StimulationApparatus):
     def __init__(self, pulse_duration=0.1, pause_duration=0.2,
                  gusto_ip='192.168.0.1', gusto_port=40175,
                  local_ip='192.168.0.10', local_port=40176,
-                 ni_trigger_out_line='Dev1/PFI1',
                  ni_trigger_in_line='Dev1/ctr0',
-                 ni_trigger_out_task_name='GustometerOut',
                  ni_trigger_in_task_name='GustometerIn',
-                 use_threads=True):
+                 use_threads=True,
+                 test_mode=False):
         """
         Parameters
         ----------
@@ -592,16 +611,10 @@ class Gustometer(_StimulationApparatus):
             The port on which to listen for responses from the gustometer
             control computer.
             Defaults to ``40176``.
-        ni_trigger_out_line : string
-            The digital output line on the NI board which shall be used to
-            send the trigger to the gustometer.
         ni_trigger_in_line : string
             The counter input line on the NI board which shall be used to
             receive the trigger pulse emitted by the gustometer as soon
             presentation of the requested stimulus has actually started.
-        ni_trigger_out_task_name : string, optional
-            The name to assign to the trigger output task.
-            Defaults to ``GustometerOut``.
         ni_trigger_in_task_name : string, optional
             The name to assign to the trigger input task.
             Defaults to ``GustometerIn``.
@@ -610,9 +623,14 @@ class Gustometer(_StimulationApparatus):
             `select_stimulus` is called. This thread would then allow
             non-blocking stimulation.
             Defaults to ``True``.
+        test_mode : bool, optional
+            If ``True``, the NI board will not actually be initialized or used
+            in any manner. This allows for testing the program logic on a
+            computer without a DAQ card.
+            Defaults to ``False``.
 
         """
-        super(Gustometer, self).__init__()
+        super(Gustometer, self).__init__(test_mode=test_mode)
         self._pulse_duration = pulse_duration
         self._pause_duration = pause_duration
         self._classfile = None
@@ -623,28 +641,20 @@ class Gustometer(_StimulationApparatus):
         self._use_threads = use_threads
         self._thread = None
 
-        # Initialize OUT trigger (FROM computer TO gusto).
-        # Sending this trigger will cause the gustometer to present the
-        # stimulus in the next pulse cycle.
-        self._ni_trigger_out_task = nidaqmx.DigitalOutputTask(
-            name=ni_trigger_out_task_name
-        )
-        self._ni_trigger_out_task.create_channel(ni_trigger_out_line)
-        self._ni_trigger_out_task.start()
-
-        # Initialize IN trigger (FROM gusto TO computer).
-        # The gustometer will send this trigger as soon as the stimulus
-        # presentation has started.
-        self._ni_trigger_in_task = nidaqmx.CounterInputTask(
-            name=ni_trigger_in_task_name
-        )
-        self._ni_trigger_in_task.create_channel_count_edges(
-            ni_trigger_in_line,
-            edge='rising',
-            direction='up',
-            init=0
-        )
-        self._ni_trigger_in_task.start()
+        if not self.test_mode:
+            # Initialize IN trigger (FROM gusto TO computer).
+            # The gustometer will send this trigger as soon as the stimulus
+            # presentation has started.
+            self._ni_trigger_in_task = nidaqmx.CounterInputTask(
+                name=ni_trigger_in_task_name
+            )
+            self._ni_trigger_in_task.create_channel_count_edges(
+                ni_trigger_in_line,
+                edge='rising',
+                direction='up',
+                init=0
+            )
+            self._ni_trigger_in_task.start()
 
         # Initialize the network connection.
         self._socket_send = socket.socket(socket.AF_INET,  # IP
@@ -653,13 +663,19 @@ class Gustometer(_StimulationApparatus):
         self._socket_receive = socket.socket(socket.AF_INET,  # IP
                                              socket.SOCK_DGRAM)  # UDP
 
-        self._socket_receive.bind((self._local_ip, self._local_port))
+        try:
+            self._socket_receive.bind((self._local_ip, self._local_port))
+        except Exception:
+            msg = ("Could not bind to local IP %s. Consider passing "
+                   "`local_ip='127.0.0.1'`when initializing the Gustometer.")
+            raise RuntimeError(msg)
         self._socket_receive.settimeout(0.1)
         self._connect()
 
     def __del__(self):
-        self._ni_trigger_in_task.clear()
-        self._ni_trigger_out_task.clear()
+        if not self.test_mode:
+            self._ni_trigger_in_task.clear()
+
         self._socket_receive.close()
         self._socket_send.close()
         del self
@@ -773,10 +789,6 @@ class Gustometer(_StimulationApparatus):
         """
         Start the stimulation with the currently selected stimulus.
 
-        The trigger pulse will open the valves. They are then left open for
-        the intended duration of the stimulus. After that, they will be
-        switched to the offset state specified by the stimulus.
-
         Parameters
         ----------
         blocking_wait : bool, optional
@@ -837,13 +849,14 @@ class Gustometer(_StimulationApparatus):
 
 class Trigger(_StimulationApparatus):
     """
-    Send triggers, e.g. to the EEG system.
+    Send triggers, e.t. to the EEG system.
 
     """
     def __init__(self, ni_lines='Dev1/PFI2:9',
                  ni_start_trigger_line=None,
                  ni_task_name='Triggers',
-                 use_threads=True):
+                 use_threads=True,
+                 test_mode=False):
         """
         Parameters
         ----------
@@ -862,34 +875,42 @@ class Trigger(_StimulationApparatus):
             `select_stimulus` is called. This thread would then allow
             non-blocking stimulation.
             Defaults to ``True``.
+        test_mode : bool, optional
+            If ``True``, the NI board will not actually be initialized or used
+            in any manner. This allows for testing the program logic on a
+            computer without a DAQ card.
+            Defaults to ``False``.
 
         """
-        super(Trigger, self).__init__()
-        self._ni_task = nidaqmx.DigitalOutputTask(name=ni_task_name)
+        super(Trigger, self).__init__(test_mode=test_mode)
+        if not self.test_mode:
+            self._ni_task = nidaqmx.DigitalOutputTask(name=ni_task_name)
 
-        # Add the trigger channels.
-        if not self._ni_task.create_channel(ni_lines):
-            raise IOError('Could not create digital output task.')
+            # Add the trigger channels.
+            if not self._ni_task.create_channel(ni_lines):
+                raise IOError('Could not create digital output task.')
 
-        self._ni_task_number_of_channels = \
-            self._ni_task.get_number_of_channels()
+            self._ni_task_number_of_channels = \
+                self._ni_task.get_number_of_channels()
 
 
-        # if not self._ni_task.configure_timing_sample_clock(
-        #         rate=self._sampling_rate,
-        #         sample_mode='finite',
-        #         samples_per_channel=self._samples_to_acquire):
-        #     raise IOError('Could not configure analog input sample clock.')
+            # if not self._ni_task.configure_timing_sample_clock(
+            #         rate=self._sampling_rate,
+            #         sample_mode='finite',
+            #         samples_per_channel=self._samples_to_acquire):
+            #     raise IOError('Could not configure analog input sample clock.')
 
-        if ni_start_trigger_line is not None:
-            if not self._ni_task.configure_trigger_digital_edge_start(
-                    ni_start_trigger_line):
-                raise IOError('Could not configure trigger channel.')
+            if ni_start_trigger_line is not None:
+                if not self._ni_task.configure_trigger_digital_edge_start(
+                        ni_start_trigger_line):
+                    raise IOError('Could not configure trigger channel.')
 
-            # Data generation is set to be triggered by an external
-            # trigger. Thus we can start the task immediately.
-            if not self._ni_task.start():
-                raise IOError('Could not start digital output task.')
+                # Data generation is set to be triggered by an external
+                # trigger. Thus we can start the task immediately.
+                if not self._ni_task.start():
+                    raise IOError('Could not start digital output task.')
+        else:
+            self._ni_task_number_of_channels = 8
 
         self._use_threads = use_threads
         self._thread = None
@@ -901,8 +922,7 @@ class Trigger(_StimulationApparatus):
     def add_trigger(self, *args, **kwargs):
         self.add_stimulus(*args, **kwargs)
 
-    def add_stimulus(self, name, bitmask, duration=1,
-                     bitmask_offset=None, trigger_time=None,
+    def add_stimulus(self, name, bitmask, duration=1, trigger_time=None,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -1023,8 +1043,9 @@ class Trigger(_StimulationApparatus):
                         hogCPUperiod=(trigger_time - psychopy.core.getTime()) / 5
                 )
 
-        if self._ni_task.write(bitmask) <= 0:
-            raise IOError('Could not write onset bitmask.')
+        if not self.test_mode:
+            if self._ni_task.write(bitmask) <= 0:
+                raise IOError('Could not write onset bitmask.')
 
         psychopy.core.wait(stimulus_duration,
                            hogCPUperiod=stimulus_duration/5)
