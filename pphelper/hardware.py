@@ -549,8 +549,8 @@ class AnalogInput(object):
     def sampling_rate(self, sampling_rate):
         self._ni_task.stop()
         self._sampling_rate = sampling_rate
-        self._samples_to_acquire = self._sampling_rate * \
-                                   self._sampling_duration
+        self._samples_to_acquire = \
+            np.ceil(self._sampling_rate * self._sampling_duration)
         self._ni_task.configure_timing_sample_clock(
             rate=sampling_rate,
             sample_mode='finite',
