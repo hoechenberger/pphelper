@@ -611,10 +611,11 @@ class Gustometer(_StimulationApparatus):
             The port on which to listen for responses from the gustometer
             control computer.
             Defaults to ``40176``.
-        ni_trigger_in_line : string
+        ni_trigger_in_line : string, optional
             The counter input line on the NI board which shall be used to
             receive the trigger pulse emitted by the gustometer as soon
             presentation of the requested stimulus has actually started.
+            Defaults to ``Dev1/ctr0``.
         ni_trigger_in_task_name : string, optional
             The name to assign to the trigger input task.
             Defaults to ``GustometerIn``.
