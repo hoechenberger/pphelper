@@ -2,7 +2,7 @@
 Changelog
 =========
 ****************
-v0.7.1, 2016-05-12
+v0.7.2, 2016-05-12
 ****************
 - Replace `onset_delay` parameter of `hardware` components with
   `trigger_time`.
