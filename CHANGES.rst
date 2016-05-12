@@ -8,6 +8,8 @@ v0.7, 2016-05-12
   `trigger_time`.
 - Add gustometer support.
 - Add support for trigger generation.
+- Add `test mode` for hardware interfaces (dummy interfaces for testing the
+  scripts outside of the lab).
 - MultiIndex support in `racemodel.get_percentiles_from_cdf()`
 - Better handling for (too) few response times supplied to
   `racemodel.gen_cdf()`.
