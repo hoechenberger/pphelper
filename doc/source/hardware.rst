@@ -8,6 +8,7 @@ The ``hardware`` Module
    Gustometer
    AnalogInput
    Trigger
+   EEG (PyCorder)
 
 Olfactometer
 ------------
@@ -22,5 +23,9 @@ AnalogInput
 .. autoclass:: pphelper.hardware.AnalogInput
 
 Trigger
------------
+-------
 .. autoclass:: pphelper.hardware.Trigger
+
+EEG (PyCorder)
+--------------
+.. autoclass:: pphelper.hardware.EEG
