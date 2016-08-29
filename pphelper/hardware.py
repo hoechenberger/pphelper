@@ -581,7 +581,6 @@ class Gustometer(_StimulationApparatus):
     """
     def __init__(self, pulse_duration=0.1, pause_duration=0.2,
                  gusto_ip='192.168.0.1', gusto_port=40175,
-                 local_ip='192.168.0.10', local_port=40176,
                  ni_trigger_in_line='PFI14',
                  ni_trigger_in_task_name='GustometerIn',
                  use_threads=True,
@@ -603,15 +602,6 @@ class Gustometer(_StimulationApparatus):
             control computer is listening for a connection. This should
             usually not need to be changed.
             Defaults to ``40175``.
-        local_ip : string, optional
-            The IP address of the computer running the experimental
-            scripts. This should be the address of the interface which is
-            connected to the gustometer control computer.
-            Defaults to ``192.168.0.10``.
-        local_port : string, optional
-            The port on which to listen for responses from the gustometer
-            control computer.
-            Defaults to ``40176``.
         ni_trigger_in_line : string, optional
             The counter input line on the NI board which shall be used to
             receive the trigger pulse emitted by the gustometer as soon
@@ -638,8 +628,6 @@ class Gustometer(_StimulationApparatus):
         self._classfile = None
         self._gusto_ip = gusto_ip
         self._gusto_port = gusto_port
-        self._local_ip = local_ip
-        self._local_port = local_port
         self._use_threads = use_threads
         self._thread = None
         # FIXME add parameter to docs.
@@ -685,42 +673,36 @@ class Gustometer(_StimulationApparatus):
             # )
 
         # Initialize the network connection.
-        self._socket_send = socket.socket(socket.AF_INET,  # IP
-                                          socket.SOCK_DGRAM)  # UDP
-
-        self._socket_receive = socket.socket(socket.AF_INET,  # IP
-                                             socket.SOCK_DGRAM)  # UDP
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.settimeout(1)
 
         try:
-            self._socket_receive.bind((self._local_ip, self._local_port))
-        except Exception:
-            msg = ("Could not bind to local IP %s. Consider passing "
-                   "`local_ip='127.0.0.1'`when initializing the Gustometer.")
-            raise RuntimeError(msg)
-        self._socket_receive.settimeout(0.1)
-        self._connect()
+            self._socket.connect((self._gusto_ip, self._gusto_port))
+        except socket.error:
+            if not self._test_mode:
+                msg = ('Could not connect to Gustometer computer at %s:%s!' %
+                       (self._gusto_ip, self._gusto_port))
+                raise RuntimeError(msg)
+            else:
+                pass
 
     def __del__(self):
         if not self.test_mode:
-            # self._ni_trigger_in_task.clear()
             self._ni_ai_task.clear()
+            self._socket.close()
 
-        self._socket_receive.close()
-        self._socket_send.close()
         del self
 
     def _send(self, message):
-        self._socket_send.sendto(message, (self._gusto_ip,
-                                           self._gusto_port))
+        # Append \r\n if it's not already part of the message: GustoControl
+        # uses these characters as command separators.
+        if not message.endswith('\r\n'):
+            message += '\r\n'
 
-    def _connect(self):
-        message = 'CONNECT %s 0' % self._local_port
-
-        # # Empty receive buffer.
-        # self._socket_receive.setblocking(False)
-        # for ............
-
-        self._send(message)
+        if not self._test_mode:
+            self._socket.sendall(message)
+        else:
+            pass
 
     def trigger_conf(self, duration=0.9, int_taste=100, int_bg=100):
         """
@@ -758,8 +740,8 @@ class Gustometer(_StimulationApparatus):
         self._send(message)
         self._classfile = filename
 
-    def add_stimulus(self, name, classnum, trigger_time=None, wait_for_gusto_trigger=True,
-                     replace=False, **kwargs):
+    def add_stimulus(self, name, classnum, trigger_time=None,
+                     wait_for_gusto_trigger=True, replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
 

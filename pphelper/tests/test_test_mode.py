@@ -10,13 +10,11 @@ from pphelper.hardware import (Gustometer, Olfactometer, Trigger)
 
 class TestGustometer():
     def test_Gustometer_without_threads(self):
-        self.g = Gustometer(local_ip='127.0.0.1', use_threads=False,
-                            test_mode=True)
+        self.g = Gustometer(use_threads=False, test_mode=True)
         self._test()
 
     def test_Gustometer_with_threads(self):
-        self.g = Gustometer(local_ip='127.0.0.1', use_threads=True,
-                            test_mode=True)
+        self.g = Gustometer(use_threads=True, test_mode=True)
         self._test()
 
     def _test(self):

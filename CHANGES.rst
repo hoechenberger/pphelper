@@ -6,6 +6,8 @@ v0.8.0, 2016-08-29
 ******************
 - Allow to block code execution after Gustometer triggering until a
   response trigger is received.
+- Triggers now must be specified as integer values, not as bitmasks.
+- Use TCP for gustometer communication. UDP support removed.
 
 ******************
 v0.7.2, 2016-05-12
