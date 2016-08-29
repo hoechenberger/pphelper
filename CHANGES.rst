@@ -1,9 +1,16 @@
 =========
 Changelog
 =========
-****************
+******************
+v0.8.0, 2016-08-29
+******************
+- Allow to block code execution after Gustometer triggering until a
+  response trigger is received.
+
+******************
 v0.7.2, 2016-05-12
-****************
+******************
+- Add a `Trigger` class for generating voltage pulses.
 - Replace `onset_delay` parameter of `hardware` components with
   `trigger_time`.
 - Add gustometer support.
