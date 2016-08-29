@@ -53,6 +53,6 @@ class TestTrigger():
         self._test()
 
     def _test(self):
-        self.t.add_stimulus('Onset', bitmask=[1, 0, 0, 0, 0, 0, 0, 0])
+        self.t.add_stimulus('Onset', 128)
         self.t.select_stimulus('Onset')
         self.t.stimulate()
