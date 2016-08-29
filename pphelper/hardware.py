@@ -480,7 +480,8 @@ class AnalogInput(object):
                 raise IOError('Could not start analog input task.')
 
     def __del__(self):
-        self._ni_task.clear()
+        if not self.test_mode:
+            self._ni_task.clear()
         del self
 
     def get_data(self):
@@ -917,7 +918,8 @@ class Trigger(_StimulationApparatus):
         self._thread = None
 
     def __del__(self):
-        self._ni_task.clear()
+        if not self.test_mode:
+            self._ni_task.clear()
         del self
 
     def add_trigger(self, *args, **kwargs):
