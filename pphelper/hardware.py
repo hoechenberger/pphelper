@@ -448,8 +448,8 @@ class AnalogInput(object):
         """
         self._sampling_duration = sampling_duration
         self._sampling_rate = sampling_rate
-        self._samples_to_acquire = self._sampling_rate * \
-                                   self._sampling_duration
+        self._samples_to_acquire = int(np.floor(self._sampling_rate * \
+                                                self._sampling_duration))
 
         self._ni_task = nidaqmx.AnalogInputTask(name=ni_task_name)
         if not self._ni_task.create_voltage_channel(
@@ -480,7 +480,8 @@ class AnalogInput(object):
                 raise IOError('Could not start analog input task.')
 
     def __del__(self):
-        self._ni_task.clear()
+        if not self.test_mode:
+            self._ni_task.clear()
         del self
 
     def get_data(self):
@@ -581,7 +582,7 @@ class Gustometer(_StimulationApparatus):
     def __init__(self, pulse_duration=0.1, pause_duration=0.2,
                  gusto_ip='192.168.0.1', gusto_port=40175,
                  local_ip='192.168.0.10', local_port=40176,
-                 ni_trigger_in_line='Dev1/ctr0',
+                 ni_trigger_in_line='PFI14',
                  ni_trigger_in_task_name='GustometerIn',
                  use_threads=True,
                  test_mode=False):
@@ -641,21 +642,47 @@ class Gustometer(_StimulationApparatus):
         self._local_port = local_port
         self._use_threads = use_threads
         self._thread = None
+        # FIXME add parameter to docs.
 
         if not self.test_mode:
             # Initialize IN trigger (FROM gusto TO computer).
             # The gustometer will send this trigger as soon as the stimulus
             # presentation has started.
-            self._ni_trigger_in_task = nidaqmx.CounterInputTask(
-                name=ni_trigger_in_task_name
-            )
-            self._ni_trigger_in_task.create_channel_count_edges(
-                ni_trigger_in_line,
-                edge='rising',
-                direction='up',
-                init=0
-            )
-            self._ni_trigger_in_task.start()
+            # self._ni_trigger_in_task = nidaqmx.DigitalInputTask(
+            #     name=ni_trigger_in_task_name
+            # )
+            #
+            # self._ni_trigger_in_task.create_channel(
+            #     ni_trigger_in_line
+            # )
+            #
+            # self._ni_trigger_in_task.configure_timing_change_detection(
+            #     rising_edge_channel=ni_trigger_in_line,
+            #     sample_mode='finite',
+            #     samples_per_channel=1
+            # )
+            #
+            self._ni_ai_task = nidaqmx.AnalogInputTask(name=ni_trigger_in_task_name)
+            if not self._ni_ai_task.create_voltage_channel(
+                    'Dev1/ai0', min_val=-10, max_val=10):
+                raise IOError('Could not create analog input channel.')
+
+            if not self._ni_ai_task.configure_timing_sample_clock(
+                    rate=192000,
+                    sample_mode='finite',
+                    samples_per_channel=2):
+                raise IOError('Could not configure analog input sample clock.')
+
+            if not self._ni_ai_task.configure_trigger_digital_edge_start(
+                    ni_trigger_in_line):
+                raise IOError('Could not configure trigger channel.')
+
+            # self._ni_trigger_in_task.create_channel_count_edges(
+            #     ni_trigger_in_line,
+            #     edge='rising',
+            #     direction='up',
+            #     init=0
+            # )
 
         # Initialize the network connection.
         self._socket_send = socket.socket(socket.AF_INET,  # IP
@@ -675,7 +702,8 @@ class Gustometer(_StimulationApparatus):
 
     def __del__(self):
         if not self.test_mode:
-            self._ni_trigger_in_task.clear()
+            # self._ni_trigger_in_task.clear()
+            self._ni_ai_task.clear()
 
         self._socket_receive.close()
         self._socket_send.close()
@@ -730,7 +758,7 @@ class Gustometer(_StimulationApparatus):
         self._send(message)
         self._classfile = filename
 
-    def add_stimulus(self, name, classnum, trigger_time=None,
+    def add_stimulus(self, name, classnum, trigger_time=None, wait_for_gusto_trigger=True,
                      replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -742,6 +770,11 @@ class Gustometer(_StimulationApparatus):
         classnum : int
             The stimulus class number, as defined in the Gusto Control
             software.
+        wait_for_gusto_trigger : bool, optional
+            Whether to block program execution and wait until we receive the
+            trigger from the gustometer, informing us about the precise time
+            of stimulus onset.
+            Defaults to `True`.
         trigger_time : float, optional
             The time (in terms of the ``psychopy.core.getTime`` timebase)
             at which the stimulation should be triggered. If ``None``,
@@ -766,7 +799,9 @@ class Gustometer(_StimulationApparatus):
         classnum = np.uint8(classnum)
         super(Gustometer, self).add_stimulus(
             name=name, classnum=classnum,
-            trigger_time=trigger_time, replace=replace, **kwargs
+            trigger_time=trigger_time,
+            wait_for_gusto_trigger=wait_for_gusto_trigger,
+            replace=replace, **kwargs
         )
 
     def select_stimulus(self, name):
@@ -782,6 +817,10 @@ class Gustometer(_StimulationApparatus):
         super(Gustometer, self).select_stimulus(name)
         message = 'CLASSNUM %d 0' % self._stimulus['classnum']
         self._send(message)
+
+        if not self.test_mode and self._stimulus['wait_for_gusto_trigger']:
+            self._ni_ai_task.stop()
+            self._ni_ai_task.start()
 
         if self._use_threads:
             self._thread = threading.Thread(target=self._stimulate)
@@ -823,16 +862,6 @@ class Gustometer(_StimulationApparatus):
             self._stimulate()
 
     def _stimulate(self):
-        # # Set trigger line to HIGH.
-        # if self._ni_task.write(self._ni_trigger_out_task.write(1)) <= 0:
-        #     raise IOError('Could not write send trigger.')
-        #
-        # psychopy.core.wait(0.010)
-        #
-        # # Set trigger line to LOW again.
-        # if self._ni_task.write(self._ni_trigger_out_task.write(0)) <= 0:
-        #     raise IOError('Could not write send trigger.')
-
         message = 'TRIGSTART 1 1'
         trigger_time = self._stimulus['trigger_time']
 
@@ -845,12 +874,14 @@ class Gustometer(_StimulationApparatus):
                 )
 
         self._send(message)
+        if not self.test_mode and self._stimulus['wait_for_gusto_trigger']:
+            self._ni_ai_task.wait_until_done()
         self._stimulus = None
 
 
 class Trigger(_StimulationApparatus):
     """
-    Send triggers, e.t. to the EEG system.
+    Send triggers, e.g. to the EEG system.
 
     """
     def __init__(self, ni_lines='Dev1/PFI2:9',
@@ -917,14 +948,15 @@ class Trigger(_StimulationApparatus):
         self._thread = None
 
     def __del__(self):
-        self._ni_task.clear()
+        if not self.test_mode:
+            self._ni_task.clear()
         del self
 
-    def add_trigger(self, *args, **kwargs):
-        self.add_stimulus(*args, **kwargs)
+    def add_stimulus(self, *args, **kwargs):
+        self.add_trigger(*args, **kwargs)
 
-    def add_stimulus(self, name, bitmask, duration=1, trigger_time=None,
-                     replace=False, **kwargs):
+    def add_trigger(self, name, trig_num, duration=0.001, trigger_time=None,
+                    replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
 
@@ -932,12 +964,11 @@ class Trigger(_StimulationApparatus):
         ----------
         name : string
             A unique identifier of the stimulus to add.
-        bitmask : array_like
-            The bitmask specifying the valve positions required to present
-            this stimulus.
+        trig_num : int
+            The trigger to send.
         duration : float, optional
-            The duration of the stimulation, specified in seconds.
-            Defaults to 1 second.
+            The duration of the trigger HIGH voltage, specified in seconds.
+            Defaults to 0.001 second.
         trigger_time : float, optional
             The time (in terms of the ``psychopy.core.getTime`` timebase)
             at which the stimulation should be triggered. If ``None``,
@@ -959,20 +990,26 @@ class Trigger(_StimulationApparatus):
         stimulate
 
         """
-        bitmask = np.array(bitmask, dtype=np.uint8)
-        if bitmask.shape[0] != self._ni_task_number_of_channels:
-            raise ValueError('Shape of the bitmask does not match number '
-                             'of physical lines.')
+        bits = self._ni_task_number_of_channels
+        max_val = 2**bits - 1  # Maximum integer value we can represent with this no. of bits.
+
+        if trig_num > max_val:
+            trig_num = max_val
+
+        bitmask = np.array(
+            list(bin(trig_num)[2:].zfill(bits))[::-1],  # Most significant bit RIGHT, not left!
+            dtype=np.uint8
+        )
 
         super(Trigger, self).add_stimulus(
                 name=name, bitmask=bitmask, duration=duration,
                 trigger_time=trigger_time, replace=replace, **kwargs
         )
 
-    def select_trigger(self, name):
-        self.select_stimulus(name)
-
     def select_stimulus(self, name):
+        self.select_trigger(name)
+
+    def select_trigger(self, name):
         """
         Select the specified trigger for the next generation.
 
