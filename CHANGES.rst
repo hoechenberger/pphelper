@@ -8,6 +8,7 @@ v0.8.0, 2016-08-29
   response trigger is received.
 - Triggers now must be specified as integer values, not as bitmasks.
 - Use TCP for gustometer communication. UDP support removed.
+- Add `Gustometer.set_mode()` to switch between edit and experiment mode.
 
 ******************
 v0.7.2, 2016-05-12

@@ -686,6 +686,8 @@ class Gustometer(_StimulationApparatus):
             else:
                 pass
 
+        self._mode = 'edit'
+
     def __del__(self):
         if not self.test_mode:
             self._ni_ai_task.clear()
@@ -703,6 +705,32 @@ class Gustometer(_StimulationApparatus):
             self._socket.sendall(message)
         else:
             pass
+
+    def set_mode(self, mode):
+        """
+        Switch between `edit` `experiment` mode.
+
+        In `edit` mode, the background stimulus presentation is off. In
+        `experiment` mode, the background stimulus presentation is on.
+
+        Parameters
+        ----------
+        mode : string
+            If `edit`, switch to edit mode.
+            If `experiment` or `exp`, switch to experiment mode.
+
+        """
+        if mode == 'edit':
+            mode_num = 1
+            self._mode = 'edit'
+        elif (mode == 'experiment') or (mode == 'exp'):
+            mode_num = 2
+            self._mode = 'experiment'
+        else:
+            raise ValueError('`mode` has to be one of: edit, experiment, exp.')
+
+        message = 'CLASSMODE %d' % mode_num
+        self._send(message)
 
     def trigger_conf(self, duration=0.9, int_taste=100, int_bg=100):
         """

@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-import numpy as np
-import pandas as pd
-import warnings
 
+import pytest
 from pphelper.hardware import (Gustometer, Olfactometer, Trigger)
 
 
@@ -16,6 +14,21 @@ class TestGustometer():
     def test_Gustometer_with_threads(self):
         self.g = Gustometer(use_threads=True, test_mode=True)
         self._test()
+
+    def test_Gustometer_set_mode(self):
+        self.g = Gustometer(use_threads=False, test_mode=True)
+
+        self.g.set_mode('edit')
+        assert self.g._mode == 'edit'
+
+        self.g.set_mode('experiment')
+        assert self.g._mode == 'experiment'
+
+        self.g.set_mode('exp')
+        assert self.g._mode == 'experiment'
+
+        with pytest.raises(ValueError):
+            self.g.set_mode('foobar')
 
     def _test(self):
         self.g.add_stimulus('Water', 0)
