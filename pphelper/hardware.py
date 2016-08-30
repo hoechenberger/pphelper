@@ -583,7 +583,7 @@ class Gustometer(_StimulationApparatus):
                  gusto_ip='192.168.0.1', gusto_port=40175,
                  ni_trigger_in_line='PFI14',
                  ni_trigger_in_task_name='GustometerIn',
-                 use_threads=True,
+                 use_threads=False,
                  test_mode=False):
         """
         Parameters
@@ -614,7 +614,7 @@ class Gustometer(_StimulationApparatus):
             Whether a Python thread should be created when
             `select_stimulus` is called. This thread would then allow
             non-blocking stimulation.
-            Defaults to ``True``.
+            Defaults to ``False``.
         test_mode : bool, optional
             If ``True``, the NI board will not actually be initialized or used
             in any manner. This allows for testing the program logic on a
@@ -897,7 +897,7 @@ class Trigger(_StimulationApparatus):
     def __init__(self, ni_lines='Dev1/PFI2:9',
                  ni_start_trigger_line=None,
                  ni_task_name='Triggers',
-                 use_threads=True,
+                 use_threads=False,
                  test_mode=False):
         """
         Parameters
@@ -916,7 +916,7 @@ class Trigger(_StimulationApparatus):
             Whether a Python thread should be created when
             `select_stimulus` is called. This thread would then allow
             non-blocking stimulation.
-            Defaults to ``True``.
+            Defaults to ``False``.
         test_mode : bool, optional
             If ``True``, the NI board will not actually be initialized or used
             in any manner. This allows for testing the program logic on a
@@ -965,7 +965,7 @@ class Trigger(_StimulationApparatus):
     def add_stimulus(self, *args, **kwargs):
         self.add_trigger(*args, **kwargs)
 
-    def add_trigger(self, name, trig_num, duration=0.001, trigger_time=None,
+    def add_trigger(self, name, trig_num, duration=None, trigger_time=None,
                     replace=False, **kwargs):
         """
         Add a stimulus to the stimulus set of this apparatus.
@@ -976,9 +976,10 @@ class Trigger(_StimulationApparatus):
             A unique identifier of the stimulus to add.
         trig_num : int
             The trigger to send.
-        duration : float, optional
+        duration : float or None, optional
             The duration of the trigger HIGH voltage, specified in seconds.
-            Defaults to 0.001 second.
+            Defaults to 0.001 second. If `None`, the trigger line is left in
+            the HIGH state.
         trigger_time : float, optional
             The time (in terms of the ``psychopy.core.getTime`` timebase)
             at which the stimulation should be triggered. If ``None``,
@@ -1095,7 +1096,11 @@ class Trigger(_StimulationApparatus):
             if self._ni_task.write(bitmask) <= 0:
                 raise IOError('Could not write onset bitmask.')
 
-        psychopy.core.wait(stimulus_duration,
-                           hogCPUperiod=stimulus_duration/5)
+        if stimulus_duration is not None:
+            psychopy.core.wait(stimulus_duration,
+                               hogCPUperiod=stimulus_duration/5)
+            bitmask = np.zeros(self._ni_task_number_of_channels)
+            if self._ni_task.write(bitmask) <= 0:
+                raise IOError('Could not write offset bitmask.')
 
         self._stimulus = None
