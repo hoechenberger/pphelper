@@ -583,7 +583,7 @@ class Gustometer(_StimulationApparatus):
                  gusto_ip='192.168.0.1', gusto_port=40175,
                  ni_trigger_in_line='PFI14',
                  ni_trigger_in_task_name='GustometerIn',
-                 use_threads=True,
+                 use_threads=False,
                  test_mode=False):
         """
         Parameters
@@ -614,7 +614,7 @@ class Gustometer(_StimulationApparatus):
             Whether a Python thread should be created when
             `select_stimulus` is called. This thread would then allow
             non-blocking stimulation.
-            Defaults to ``True``.
+            Defaults to ``False``.
         test_mode : bool, optional
             If ``True``, the NI board will not actually be initialized or used
             in any manner. This allows for testing the program logic on a
@@ -897,7 +897,7 @@ class Trigger(_StimulationApparatus):
     def __init__(self, ni_lines='Dev1/PFI2:9',
                  ni_start_trigger_line=None,
                  ni_task_name='Triggers',
-                 use_threads=True,
+                 use_threads=False,
                  test_mode=False):
         """
         Parameters
@@ -916,7 +916,7 @@ class Trigger(_StimulationApparatus):
             Whether a Python thread should be created when
             `select_stimulus` is called. This thread would then allow
             non-blocking stimulation.
-            Defaults to ``True``.
+            Defaults to ``False``.
         test_mode : bool, optional
             If ``True``, the NI board will not actually be initialized or used
             in any manner. This allows for testing the program logic on a
