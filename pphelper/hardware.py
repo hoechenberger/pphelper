@@ -9,6 +9,7 @@ import numpy as np
 import threading
 import psychopy.core
 import socket
+import time
 
 
 class _StimulationApparatus(object):
@@ -1104,3 +1105,216 @@ class Trigger(_StimulationApparatus):
                 raise IOError('Could not write offset bitmask.')
 
         self._stimulus = None
+
+
+class EEG(object):
+    """
+    Provides a remote-control interface to PyCorder.
+
+    """
+    def __init__(self, exp_name, participant, config_file,
+                 pycorder_host='758098-G-PC', pycorder_port=6700,
+                 test_mode=False):
+        """
+        Parameters
+        ----------
+        exp_name : str
+            Name of the experiment. Will make up the first part of the
+            EEG filename.
+        participant : str
+            Participant identifier. Will make up the second part of the
+            EEG filename.
+        config_file : str
+            The full path to the configuration file, with forward slashes
+            as path separators.
+        pycorder_host : string, optional
+            The IP address or hostname of the computer running PyCorder.
+            Defaults to ``758098-G-PC``.
+        pycorder_port : int, optional
+            The port on which PyCorder is listening for a connection on the
+            EEG computer. This should usually not need to be changed.
+            Defaults to ``6700``.
+        test_mode : bool, optional
+            If ``True``, the network connection to the PyCorder computer will
+            not actually be initialized.
+            Defaults to ``False``.
+        """
+        self._test_mode = test_mode
+
+        self._pycorder_host = pycorder_host
+        self._pycorder_port = pycorder_port
+
+        self._socket = socket.socket(socket.AF_INET,
+                                     socket.SOCK_STREAM)
+        self._socket.settimeout(1)
+
+        try:
+            self._socket.connect((self._pycorder_host, self._pycorder_port))
+        except socket.error:
+            if not self._test_mode:
+                msg = ('Could not connect to PyCorder at %s:%s!' %
+                       (self._pycorder_host, self._pycorder_port))
+                raise RuntimeError(msg)
+            else:
+                pass
+
+        self._config_file = config_file
+        self._exp_name = exp_name
+        self._participant = participant
+        self._block = 1
+        self._mode = 'default'
+        self._recording = False
+        self._setup_pycorder()
+
+    def __del__(self):
+        self._socket.close()
+        del self
+
+    def _send(self, message):
+        # Append \r\n if it's not already part of the message: PyCorder
+        # uses these characters as command separators.
+        if not message.endswith('\r\n'):
+            message += '\r\n'
+
+        if not self._test_mode:
+            self._socket.sendall(message)
+        else:
+            pass
+
+    def set_config_file(self, path):
+        """
+        Set the path to the configuration file. An absolute path is required.
+
+        Parameters
+        ----------
+        path : string
+            The path to the configuration file, e.g.,
+            'C:\\Users\EEG\\Desktop\\Experiment\\config.xml'.
+
+        """
+        msg = '1%s' % path
+        self._send(msg)
+        time.sleep(1.2)
+
+        msg = '4'
+        self._send(msg)
+        time.sleep(1.2)
+
+        self._config_file = path
+
+    def set_exp_name(self, name):
+        """
+        Set the name of the experiment or study.
+
+        The name will make up the first part of the EEG filename.
+
+        Parameters
+        ----------
+        path : string
+            The name of the study or experiment, e.g., `'MyStudy2'`.
+
+
+        """
+        msg = '2%s' % name
+        self._send(msg)
+        time.sleep(1.2)
+
+        self._exp_name = name
+
+    def set_participant(self, participant):
+        """
+        Set the participant identifier.
+
+        This identifier will make up the center part of the EEG filename.
+
+        Parameters
+        ----------
+        participant : int or string
+            The participant identifier, e.g., `123`.
+
+        """
+        msg = '3%s_%s' % (participant, self._block)
+        self._send(msg)
+        time.sleep(1.2)
+
+        self._participant = participant
+
+    def set_block(self, block):
+        """
+        Set the number of the current block.
+
+        This number will make up the last part of the EEG filename.
+
+        Parameters
+        ----------
+        block : int, or string
+            The block number, e.g., `1` or `2`.
+
+        """
+        msg = '3%s_%s' % (self._participant, block)
+        self._send(msg)
+        time.sleep(1.2)
+
+        self._block = block
+
+    def _setup_pycorder(self):
+        self.set_mode('default')
+        self.set_config_file(self._config_file)
+        self.set_exp_name(self._exp_name)
+        self.set_participant(self._participant)
+        self.set_block(self._block)
+
+    def set_mode(self, mode):
+        """
+        Set the current mode.
+
+        Parameters
+        ----------
+        mode : string
+            The mode to switch to. `impedance` and `imp` will switch to
+            impedance mode, while `monitoring` and `mon` will switch to
+            monitoring mode. `default and `def` will exit impedance and
+            monitoring mode.
+
+        """
+        if (mode == 'impedance') or (mode == 'imp'):
+            self._mode = 'impedance'
+            msg = 'I'
+        elif (mode == 'monitor') or (mode == 'mon'):
+            self._mode = 'monitor'
+            msg = 'M'
+        elif (mode == 'default') or (mode == 'def'):
+            self._mode = 'default'
+            msg = 'X'
+        else:
+            msg = ('`mode` must be one of: impedance, imp, monitor, mon, '
+                   'def, or default.')
+            raise ValueError(msg)
+
+        self._send(msg)
+
+    def start_recording(self):
+        """
+        Start recording EEG.
+
+        """
+        if self._recording:
+            msg = 'Recording is still in progress!'
+            raise RuntimeError(msg)
+
+        msg = 'S'
+        self._send(msg)
+        self._recording = True
+
+    def stop_recording(self):
+        """
+        Stop recording EEG.
+
+        """
+        if not self._recording:
+            msg = 'Recording has not yet been started!'
+            raise RuntimeError(msg)
+
+        msg = 'Q'
+        self._send(msg)
+        self._recording = False

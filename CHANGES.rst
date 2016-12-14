@@ -1,6 +1,11 @@
 =========
 Changelog
 =========
+*****************
+v0.9.0, xxx-xx-xx
+*****************
+- Add support for PyCorder remote control via `hardware.EEG`.
+
 ******************
 v0.8.0, 2016-08-29
 ******************
