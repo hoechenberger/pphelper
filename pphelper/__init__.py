@@ -6,13 +6,6 @@
 
 """
 from __future__ import print_function, unicode_literals
-
 from .version import __version__
-from . import racemodel, utils, image
-try:
-    import nidaqmx as _nidaqmx
-except ImportError:
-    print('Problem importing the hardware module, skipping.\n'
-          'Please check if PyLibNIDAQmx is installed.')
 
 __all__ = ['racemodel', 'hardware', 'image', 'sdt', 'utils']
