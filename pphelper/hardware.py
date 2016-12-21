@@ -782,7 +782,7 @@ class Gustometer(_StimulationApparatus):
             The stimulus class number, as defined in the Gusto Control
             software.
         wait_for_gusto_trigger : bool, optional
-            Whether to block program execution and wait until we receive the
+            Whether to block_id program execution and wait until we receive the
             trigger from the gustometer, informing us about the precise time
             of stimulus onset.
             Defaults to `True`.
@@ -1109,7 +1109,7 @@ class Trigger(_StimulationApparatus):
 
 class EEG(object):
     """
-    Provides a remote-control interface to PyCorder.
+    A remote-control interface for PyCorder.
 
     """
     def __init__(self, exp_name, participant, config_file,
@@ -1138,6 +1138,7 @@ class EEG(object):
             If ``True``, the network connection to the PyCorder computer will
             not actually be initialized.
             Defaults to ``False``.
+
         """
         self._test_mode = test_mode
 
@@ -1147,7 +1148,20 @@ class EEG(object):
         self._socket = socket.socket(socket.AF_INET,
                                      socket.SOCK_STREAM)
         self._socket.settimeout(1)
+        self._connect()
 
+        self.config_file = config_file
+        self.exp_name = exp_name
+        self.participant_id = participant
+        self.mode = 'default'
+        self.block_id = None
+        self._recording = None
+
+    def __del__(self):
+        self._socket.close()
+        del self
+
+    def _connect(self):
         try:
             self._socket.connect((self._pycorder_host, self._pycorder_port))
         except socket.error:
@@ -1157,18 +1171,6 @@ class EEG(object):
                 raise RuntimeError(msg)
             else:
                 pass
-
-        self._config_file = config_file
-        self._exp_name = exp_name
-        self._participant = participant
-        self._block = 1
-        self._mode = 'default'
-        self._recording = False
-        self._setup_pycorder()
-
-    def __del__(self):
-        self._socket.close()
-        del self
 
     def _send(self, message):
         # Append \r\n if it's not already part of the message: PyCorder
@@ -1181,17 +1183,31 @@ class EEG(object):
         else:
             pass
 
-    def set_config_file(self, path):
+    @property
+    def test_mode(self):
         """
-        Set the path to the configuration file. An absolute path is required.
+        :type:  bool
 
-        Parameters
-        ----------
-        path : string
-            The path to the configuration file, e.g.,
-            'C:\\Users\EEG\\Desktop\\Experiment\\config.xml'.
+        :obj:`True` if we're in test mode,  :obj:`False` otherwise.
 
+        Notes
+        -----
+        This property can only be set on class instantiation by passing
+        the ``test_mode`` keyword argument.
         """
+        return self._test_mode
+
+    @property
+    def config_file(self):
+        """
+        :type: string
+
+        The absolute path to the configuration file.
+        """
+        return self._config_file
+
+    @config_file.setter
+    def config_file(self, path):
         msg = '1%s' % path
         self._send(msg)
         time.sleep(1.2)
@@ -1202,81 +1218,73 @@ class EEG(object):
 
         self._config_file = path
 
-    def set_exp_name(self, name):
+    @property
+    def exp_name(self):
         """
-        Set the name of the experiment or study.
+        :type: string
 
-        The name will make up the first part of the EEG filename.
-
-        Parameters
-        ----------
-        path : string
-            The name of the study or experiment, e.g., `'MyStudy2'`.
-
-
+        The name of the experiment or study. The name will make up the first
+        part of the EEG filename.
         """
-        msg = '2%s' % name
+        return self._exp_name
+
+    @exp_name.setter
+    def exp_name(self, value):
+        msg = '2%s' % value
         self._send(msg)
         time.sleep(1.2)
 
-        self._exp_name = name
+        self._exp_name = value
 
-    def set_participant(self, participant):
+    @property
+    def participant_id(self):
         """
-        Set the participant identifier.
+        :type: int or string
 
-        This identifier will make up the center part of the EEG filename.
-
-        Parameters
-        ----------
-        participant : int or string
-            The participant identifier, e.g., `123`.
-
+        The participant_id identifier.
         """
-        msg = '3%s_%s' % (participant, self._block)
+        return self._participant_id
+
+    @participant_id.setter
+    def participant_id(self, value):
+        msg = '3%s_%s' % (value, self._block_id)
         self._send(msg)
         time.sleep(1.2)
 
-        self._participant = participant
+        self._participant_id = value
 
-    def set_block(self, block):
+    @property
+    def block_id(self):
         """
-        Set the number of the current block.
+        :type: int or string
 
+        The number of the current block_id.
         This number will make up the last part of the EEG filename.
-
-        Parameters
-        ----------
-        block : int, or string
-            The block number, e.g., `1` or `2`.
-
         """
-        msg = '3%s_%s' % (self._participant, block)
+        return self._block_id
+
+    @block_id.setter
+    def block_id(self, value):
+        msg = '3%s_%s' % (self._participant_id, value)
         self._send(msg)
         time.sleep(1.2)
+        self._block_id = value
 
-        self._block = block
-
-    def _setup_pycorder(self):
-        self.set_mode('default')
-        self.set_config_file(self._config_file)
-        self.set_exp_name(self._exp_name)
-        self.set_participant(self._participant)
-        self.set_block(self._block)
-
-    def set_mode(self, mode):
+    @property
+    def mode(self):
         """
-        Set the current mode.
+        :type: string
 
-        Parameters
-        ----------
-        mode : string
-            The mode to switch to. `impedance` and `imp` will switch to
-            impedance mode, while `monitoring` and `mon` will switch to
-            monitoring mode. `default and `def` will exit impedance and
-            monitoring mode.
+        The current display and operational mode.
 
+        `impedance` and `imp` will select impedance mode, while `monitoring`
+        and `mon` will select monitoring mode. `default and `def` will exit
+        impedance and monitoring mode.
         """
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
         if (mode == 'impedance') or (mode == 'imp'):
             self._mode = 'impedance'
             msg = 'I'
@@ -1293,10 +1301,23 @@ class EEG(object):
 
         self._send(msg)
 
+    @property
+    def recording(self):
+        """
+        :type: bool
+
+        `True` if we're currently recording data, and `False` otherwise.
+
+        Notes
+        -----
+        This property cannot be set directly. Use
+        :func:`~start_recording` and :func:`~stop_recording` instead.
+        """
+        return self._recording
+
     def start_recording(self):
         """
         Start recording EEG.
-
         """
         if self._recording:
             msg = 'Recording is still in progress!'
@@ -1309,7 +1330,6 @@ class EEG(object):
     def stop_recording(self):
         """
         Stop recording EEG.
-
         """
         if not self._recording:
             msg = 'Recording has not yet been started!'
