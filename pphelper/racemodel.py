@@ -683,3 +683,268 @@ def sum_cdfs(cdfs):
         raise IndexError('Please supply CDFs with equal indices.')
 
     return np.minimum(pd.DataFrame(cdfs).T.sum(axis=1), 1)
+
+
+def gen_miller_bound(cdfs, cols, name='Miller'):
+    """
+    Calculate the Miller bound.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns to perform the calculations on.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The Miller bound.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two column names to calculate the '
+               'Miller bound.')
+        raise ValueError(msg)
+
+    result = cdfs[cols[0]] + cdfs[cols[1]]
+    result.name = name
+    return result
+
+
+def gen_grice_bound(cdfs, cols, name='Grice'):
+    """
+    Calculate the Grice bound.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns to perform the calculations on.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The Grice bound.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two column names to calculate the '
+               'Grice bound.')
+        raise ValueError(msg)
+
+    result = cdfs[cols].max(axis='columns')
+    result.name = name
+    return result
+
+
+def gen_stochastis_independence_bound(cdfs, cols, name='Indep'):
+    """
+    Calculate the stochastic independence bound.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns to perform the calculations on.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The stochastic independence bound bound.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two column names to calculate the '
+               'stochastic independence bound.')
+        raise ValueError(msg)
+
+    x = cdfs[cols[0]]
+    y = cdfs[cols[1]]
+
+    result = x + y - (x * y)
+    result.name = name
+    return result
+
+
+def gen_capacity(cdfs, cols_unimod, col_bimod, name='C'):
+    """
+    Calculate capacity coefficients.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols_unimod : iterable
+        The names of the columns containing the unimodal CDFs.
+        This iterable must contain exactly two elements.
+    col_bimod : string
+        The name of the column containing the bimodal CDF.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The capacity coefficients.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols_unimod) != 2:
+        msg = ('You must supply exactly two unimodal column names to '
+               'calculate capacity coefficients.')
+        raise ValueError(msg)
+
+    cols = cols_unimod[:]  # Be sure to work on a copy.
+    cols.append(col_bimod)
+
+    # Survival functions.
+    S = 1 - cdfs[cols]
+
+    # Drop all zero values, since log(0) is not defined.
+    S = S.replace(0, np.nan)
+
+    num = np.log(S[col_bimod])
+    denom = np.log(S[cols_unimod[0]] * S[cols_unimod[1]])
+
+    # Drop zero values from denominator, which can be introduced by
+    # calculating log(1).
+    denom = denom.replace(0, np.nan)
+
+    result = num / denom
+    result.name = name
+    return result
+
+
+def gen_capacity_miller(cdfs, cols, name='C_Miller'):
+    """
+    Calculate the Miller bound in capacity space.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns containing the unimodal CDFs.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The Miller bound in capacity space.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two unimodal column names to '
+               'calculate capacity coefficients.')
+        raise ValueError(msg)
+
+    # Survival functions.
+    S = 1 - cdfs[cols]
+
+    # Drop all zero values, since log(0) is not defined.
+    S = S.replace(0, np.nan)
+
+    # cols[0] + cols[1] - 1 must be != 0 for the same reason.
+    S.loc[S.sum(axis='columns') == 1] = np.nan
+
+    # Remove zero and negative values before we calculate the
+    # logarithm.
+    num_ = S.sum(axis='columns', skipna=False) - 1
+    num_.loc[num_ <= 0] = np.nan
+
+    num = np.log(num_)
+    denom = np.log(S[cols[0]] * S[cols[1]])
+
+    # Drop zero values from denominator, which can be introduced by
+    # calculating log(1).
+    denom = denom.replace(0, np.nan)
+
+    result = num / denom
+    result.name = name
+    return result
+
+
+def gen_capacity_grice(cdfs, cols, name='C_Miller'):
+    """
+    Calculate the Miller bound in capacity space.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns containing the unimodal CDFs.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The Miller bound in capacity space.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two unimodal column names to '
+               'calculate capacity coefficients.')
+        raise ValueError(msg)
+
+    # Survival functions.
+    S = 1 - cdfs[cols]
+
+    # Drop all zero values, since log(0) is not defined.
+    S = S.replace(0, np.nan)
+
+    num = np.log(S.min(axis='columns'))
+    denom = np.log(S[cols[0]] * S[cols[1]])
+
+    # Drop zero values from denominator, which can be introduced by
+    # calculating log(1).
+    denom = denom.replace(0, np.nan)
+
+    result = num / denom
+    result.name = name
+    return result
