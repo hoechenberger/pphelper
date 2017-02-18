@@ -5,6 +5,8 @@ Changelog
 v0.9.0, xxx-xx-xx
 *****************
 - Add support for PyCorder remote control via `hardware.EEG`.
+- Adds support for easy calculation of the Miller and Grice bounds,
+  as well as for stochastic independence.
 
 ******************
 v0.8.0, 2016-08-29

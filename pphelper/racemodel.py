@@ -683,3 +683,111 @@ def sum_cdfs(cdfs):
         raise IndexError('Please supply CDFs with equal indices.')
 
     return np.minimum(pd.DataFrame(cdfs).T.sum(axis=1), 1)
+
+
+def gen_miller_bound(cdfs, cols, name='Miller'):
+    """
+    Calculate the Miller bound.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns to perform the calculations on.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The Miller bound.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two column names to calculate the '
+               'Miller bound.')
+        raise ValueError(msg)
+
+    result = cdfs[cols[0]] + cdfs[cols[1]]
+    result.name = name
+    return result
+
+
+def gen_grice_bound(cdfs, cols, name='Grice'):
+    """
+    Calculate the Grice bound.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns to perform the calculations on.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The Grice bound.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two column names to calculate the '
+               'Grice bound.')
+        raise ValueError(msg)
+
+    result = cdfs[cols].max(axis='columns')
+    result.name = name
+    return result
+
+
+def gen_stochastis_independence_bound(cdfs, cols, name='Indep'):
+    """
+    Calculate the stochastic independence bound.
+
+    Parameters
+    ----------
+    cdfs : DataFrame
+        A DataFrame with pre-calculated CDFs (one per column).
+    cols : iterable
+        The names of the columns to perform the calculations on.
+        This iterable must contain exactly two elements.
+    name : string, optional
+        The column name to assign to the calculated bound.
+
+    Returns
+    -------
+    result : Series
+        The stochastic independence bound bound.
+
+    Raises
+    ------
+    ValueError
+        If `cols` does not contain exactly two elements.
+
+    """
+    if len(cols) != 2:
+        msg = ('You must supply exactly two column names to calculate the '
+               'stochastic independence bound.')
+        raise ValueError(msg)
+
+    x = cdfs[cols[0]]
+    y = cdfs[cols[1]]
+
+    result = x + y - (x * y)
+    result.name = name
+    return result
