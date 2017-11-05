@@ -8,6 +8,7 @@ v0.9.0, xxx-xx-xx
 - Add support for easy calculation of the Miller and Grice bounds,
   as well as for stochastic independence.
 - Add support for calculating capacity coefficients.
+- Add `tests.find_nearest()`.
 
 ******************
 v0.8.0, 2016-08-29

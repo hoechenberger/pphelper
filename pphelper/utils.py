@@ -10,6 +10,7 @@ from __future__ import division, unicode_literals
 import sys
 import pandas as pd
 import itertools
+from collections import namedtuple
 import numpy as np
 
 
@@ -89,3 +90,33 @@ def join_multi_level_index(index, sep='_'):
     The joined index.
     """
     return [sep.join(x) for x in index]
+
+
+def find_nearest(a, x, return_index=False):
+    """
+    Find the element in array `a` closest to the scalar value `x`
+
+    Parameters
+    ----------
+    a : NDarray
+        A numpy array.
+
+    x : float
+
+    return_index : bool
+        Whether to return the index of the matching element as well.
+
+    Returns
+    -------
+    float or tuple
+        Returns the value of the matching element, or a tuple of the element's
+        index and its value if `return_index=True`.
+
+    """
+    a = np.array(a)
+    idx = np.abs(a - x).argmin()
+
+    if return_index:
+        return idx, a.flat[idx]
+    else:
+        return a.flat[idx]
