@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import numpy as np
 import pandas as pd
 from pphelper.utils import (add_zero_padding, get_max_from_list,
-                            join_multi_level_index)
+                            join_multi_level_index, find_nearest)
 
 
 def test_add_zero_padding_no_args():
@@ -64,6 +64,45 @@ def test_join_multi_level_index():
     result = join_multi_level_index(idx, sep='-')
 
     assert result == result_expected
+
+
+def test_find_nearest():
+    a = np.array([1, 2, 3])
+
+    x = 2
+    result_expected = 2
+    result = find_nearest(a, x)
+    assert result == result_expected
+
+    x = 1.3
+    result_expected = 1
+    result = find_nearest(a, x)
+    assert result == result_expected
+
+    x = 2.5
+    result_expected = 2
+    result = find_nearest(a, x)
+    assert result == result_expected
+
+
+def test_find_nearest_return_index():
+    a = np.array([1, 2, 3])
+
+    x = 2
+    result_expected = (1, 2)
+    result = find_nearest(a, x, return_index=True)
+    assert result == result_expected
+
+    x = 1.3
+    result_expected = (0, 1)
+    result = find_nearest(a, x, return_index=True)
+    assert result == result_expected
+
+    x = 2.5
+    result_expected = (1, 2)
+    result = find_nearest(a, x, return_index=True)
+    assert result == result_expected
+
 
 if __name__ == '__main__':
     import pytest
