@@ -23,7 +23,7 @@ setup(
     description='Different helper modules for analysis of psychophysics '
                 'experiments.',
     long_description=open('README.rst').read(),
-    install_requires=['pandas','numpy'],
+    install_requires=['pandas', 'numpy'],
     extras_require = {
         'hardware':  ['psychopy', 'pylibnidaqmx'],
         'image': ['pyfftw', 'scipy', 'matplotlib', 'pillow'],
@@ -35,13 +35,11 @@ setup(
                  'Topic :: Scientific/Engineering :: Information Analysis',
                  'Topic :: Scientific/Engineering :: Medical Science Apps.',
                  'Operating System :: POSIX',
-                 'Operating System :: Unix',
                  'Operating System :: MacOS',
                  'Operating System :: Microsoft :: Windows',
                  'Programming Language :: Python :: 2',
-                 'Programming Language :: Python :: 2.6',
-                 'Programming Language :: Python :: 2.7']
-                  # 'Programming Language :: Python :: 3',
-                 # 'Programming Language :: Python :: 3.3',
-                 # 'Programming Language :: Python :: 3.4'],
+                 'Programming Language :: Python :: 2.7',
+                 'Programming Language :: Python :: 3',
+                 'Programming Language :: Python :: 3.6',
+                 'Programming Language :: Python :: 3.7'],
 )
