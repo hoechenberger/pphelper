@@ -2,7 +2,7 @@
 Changelog
 =========
 *****************
-v0.9.0, xxx-xx-xx
+0.9.0, 2019-03-26
 *****************
 - Add support for PyCorder remote control via `hardware.EEG`.
 - Add support for easy calculation of the Miller and Grice bounds,
